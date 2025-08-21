@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// Intended to be called once only
-func InitDatabaseTables(ctx context.Context) error {
+// Intended to be called once only. Initialize tables (relational)
+func InitializeDTables(ctx context.Context) error {
 	dbx, err := GETDBX()
 	if err != nil {
 		return err

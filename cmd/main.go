@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/renniemaharaj/project-list-go/internal/repository"
 	"github.com/renniemaharaj/project-list-go/internal/router"
@@ -17,7 +18,11 @@ func main() {
 	m := conveyor.CreateManager().Start()
 	m.Start()
 
-	if err := repository.InitDatabaseTables(context.Background()); err != nil {
+	// allow time for postgres to intialize
+	time.Sleep(5 * time.Second)
+
+	// will automatically initalize tables
+	if err := repository.InitializeDTables(context.Background()); err != nil {
 		panic(err)
 	}
 

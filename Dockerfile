@@ -1,10 +1,10 @@
 # --- Stage 1: Build ---
-FROM golang:1.22-bullseye AS builder
+FROM golang:1.24-bullseye AS builder
 
 WORKDIR /go/src/app
 
 # Install dependencies first (better cache)
-COPY backend/go.mod backend/go.sum ./
+COPY go.mod go.sum ./
 RUN go mod download && go mod tidy
 
 # Copy source
@@ -22,13 +22,11 @@ WORKDIR /app
 # Copy built binary
 COPY --from=builder /go/src/app/main .
 
+# Copy .env
+COPY .env .
+
 # Expose service port
 EXPOSE 8081
-
-# Set environment defaults (can be overridden in docker-compose.yml)
-ENV DB_HOST=db \
-    DB_USER=postgres \
-    DB_PASSWORD=example
 
 # Run backend
 CMD ["./main"]
