@@ -5,7 +5,7 @@ import (
 
 	"github.com/renniemaharaj/project-list-go/internal/auth"
 	cors "github.com/renniemaharaj/project-list-go/internal/middleware"
-	handlers "github.com/renniemaharaj/project-list-go/internal/router/routes"
+	"github.com/renniemaharaj/project-list-go/internal/router/routes"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -17,14 +17,19 @@ func SetupRouter() http.Handler {
 	// use middlewares
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
-	r.Use(cors.CORS)         // CORS middleware
-	r.Use(auth.FirebaseAuth) // Auth middleware
+	r.Use(cors.CORS) // CORS middleware
 
 	// public routes
-	r.Get("/public", handlers.Public)
+	r.Group(func(r chi.Router) {
+		// public
+		r.Get("/public", routes.HealthCheck)
+	})
 
 	// protected routes
-	r.Get("/protected", handlers.Protected)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.FirebaseAuth)
+		r.Get("/protected", routes.Projects)
+	})
 
 	return r
 }

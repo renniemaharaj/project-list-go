@@ -13,9 +13,8 @@ import (
 )
 
 func main() {
-	r := router.SetupRouter()
 	l := logger.New().Prefix("Backend")
-	m := conveyor.CreateManager().Start()
+	m := conveyor.CreateManager().Start() // todo: utilize conveyor elsewhere
 	m.Start()
 
 	// allow time for postgres to intialize
@@ -26,6 +25,8 @@ func main() {
 		panic(err)
 	}
 
+	// setup chi router and start server
+	r := router.SetupRouter()
 	go func() {
 		l.Info("Starting server on :8081")
 		if err := http.ListenAndServe(":8081", r); err != nil {
