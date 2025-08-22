@@ -25,6 +25,17 @@ func main() {
 		panic(err)
 	}
 
+	demoData := true
+	if demoData {
+		repo, err := repository.NewRepository()
+		if err != nil {
+			logger.New().Fatal(err)
+		}
+		err = repo.SeedDemoData(context.Background())
+		if err != nil {
+			logger.New().Fatal(err)
+		}
+	}
 	// setup chi router and start server
 	r := router.SetupRouter()
 	go func() {

@@ -29,15 +29,6 @@ func InitializeDTables(ctx context.Context) error {
 			PRIMARY KEY (consultant_id, role)
 		);`,
 
-		// 3. Status
-		`CREATE TABLE IF NOT EXISTS status (
-			id SERIAL PRIMARY KEY,
-			title VARCHAR(100) NOT NULL,
-			date_created TIMESTAMP DEFAULT NOW(),
-			project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-			description TEXT
-		);`,
-
 		// 4. Projects
 		`CREATE TABLE IF NOT EXISTS projects (
 			id SERIAL PRIMARY KEY,
@@ -47,8 +38,17 @@ func InitializeDTables(ctx context.Context) error {
 			end_date TIMESTAMP,
 			number VARCHAR(50) NOT NULL,
 			name TEXT NOT NULL,
-			hours_assigned NUMERIC(10,2),
 			manager_id INTEGER REFERENCES consultants(id),
+			description TEXT
+		);`,
+
+		// 3. Status
+		`CREATE TABLE IF NOT EXISTS statuses (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(100) NOT NULL,
+			date_created TIMESTAMP DEFAULT NOW(),
+			project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+			consultant_id INTEGER REFERENCES consultants(id) ON DELETE SET NULL,
 			description TEXT
 		);`,
 
@@ -67,7 +67,7 @@ func InitializeDTables(ctx context.Context) error {
     		description TEXT,
     		consultant_id INTEGER REFERENCES consultants(id) ON DELETE SET NULL,
     		project_id INTEGER REFERENCES projects(id) ON DELETE CASCADE,
-    		type VARCHAR(10) NOT NULL CHECK (type IN ('debit','credit')),
+    		type VARCHAR(10) NOT NULL,
     		entry_date TIMESTAMP DEFAULT NOW()
 		);`,
 	}

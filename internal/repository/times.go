@@ -19,7 +19,6 @@ func (r *repository) CreateTimeEntry(ctx context.Context, e *entity.TimeEntry) e
 			"consultant_id": e.ConsultantID,
 			"project_id":    e.ProjectID,
 			"type":          e.Type,
-			"entry_date":    e.EntryDate,
 		}).Execute()
 		return err
 	})
