@@ -2,17 +2,11 @@ package entity
 
 import "time"
 
-// Status table
+// Status struct
 type Status struct {
 	ID          int       `json:"id"`
 	Title       string    `json:"title"`
+	ProjectID   int       `json:"projectId"`
 	Description string    `json:"description"`
 	DateCreated time.Time `json:"dateCreated"`
-}
-
-// Project history mapping of project to status
-type StatusHistory struct {
-	ProjectID int       `json:"projectId"`
-	StatusID  int       `json:"statusId"`
-	ChangedAt time.Time `json:"changedAt"`
 }

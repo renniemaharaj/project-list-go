@@ -31,9 +31,7 @@ type Repository interface {
 
 	// --- Status & History ---
 	CreateStatus(ctx context.Context, s *entity.Status) error
-	ListStatuses(ctx context.Context) ([]entity.Status, error)
-	AddProjectStatus(ctx context.Context, projectID int, statusID int) error
-	GetProjectStatusHistory(ctx context.Context, projectID int) ([]entity.Status, error)
+	GetStatusHistory(ctx context.Context, projectID int) ([]entity.Status, error)
 
 	// --- Time Entries ---
 	CreateTimeEntry(ctx context.Context, e *entity.TimeEntry) error

@@ -10,11 +10,12 @@ type TimeEntry struct {
 	Description  string    `json:"description"`
 	ConsultantID int       `json:"consultantId"` // FK → consultants
 	ProjectID    int       `json:"projectId"`    // FK → projects
+	Type         string    `json:"type"`         // Debit or Credit
 	EntryDate    time.Time `json:"entryDate"`    // when it was logged
 }
 
 // TimeBudget is not a table itself, it's derived from queries
 type TimeBudget struct {
-	Assigned []TimeEntry `json:"assigned"`
-	Entries  []TimeEntry `json:"entries"`
+	ID          int `json:"id"`
+	TimeEntryID int `json:"timeEntryID"`
 }
