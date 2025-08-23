@@ -34,17 +34,25 @@ func (r *repository) GetTimeEntryByID(ctx context.Context, id int) (*entity.Time
 	return &e, nil
 }
 
-// ListTimeEntriesByProject will return all time entries for project
-func (r *repository) ListTimeEntriesByProject(ctx context.Context, projectID int) ([]entity.TimeEntry, error) {
+// GetTimeEntryHistory will return all time entries for project
+func (r *repository) GetTimeEntryHistory(ctx context.Context, projectID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.db.Select().From("time_entries").Where(dbx.HashExp{"project_id": projectID}).All(&list)
+	err := r.db.Select().
+		From("time_entries").
+		Where(dbx.HashExp{"project_id": projectID}).
+		OrderBy("id DESC").
+		All(&list)
 	return list, err
 }
 
-// ListTimeEntriesByConsultant will return all time entries by consultant
-func (r *repository) ListTimeEntriesByConsultant(ctx context.Context, consultantID int) ([]entity.TimeEntry, error) {
+// GetTimeEntryHistoryByConsultant will return all time entries by consultant
+func (r *repository) GetTimeEntryHistoryByConsultant(ctx context.Context, consultantID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.db.Select().From("time_entries").Where(dbx.HashExp{"consultant_id": consultantID}).All(&list)
+	err := r.db.Select().
+		From("time_entries").
+		Where(dbx.HashExp{"consultant_id": consultantID}).
+		OrderBy("id DESC").
+		All(&list)
 	return list, err
 }
 
@@ -64,8 +72,8 @@ func (r *repository) UpdateTimeEntry(ctx context.Context, e *entity.TimeEntry) e
 	})
 }
 
-// DeleteTimeEntry will delete a time entry by ID
-func (r *repository) DeleteTimeEntry(ctx context.Context, id int) error {
+// DeleteTimeEntryByID will delete a time entry by ID
+func (r *repository) DeleteTimeEntryByID(ctx context.Context, id int) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		_, err := tx.Delete("time_entries", dbx.HashExp{"id": id}).Execute()
 		return err

@@ -1,0 +1,3 @@
+2025-08-23 09:19:56.931: ERROR [Repository] pq: sorry, too many clients already (meta.go:15 in github.com/renniemaharaj/project-list-go/internal/repository.(*repository).GetProjectMetaByProjectID)
+2025-08-23 09:19:56.951: ERROR [Repository] pq: sorry, too many clients already (meta.go:21 in github.com/renniemaharaj/project-list-go/internal/repository.(*repository).GetProjectMetaByProjectID)
+2025-08-23 09:19:56.968: ERROR [Repository] pq: sorry, too many clients already (meta.go:27 in github.com/renniemaharaj/project-list-go/internal/repository.(*repository).GetProjectMetaByProjectID)

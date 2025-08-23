@@ -7,16 +7,16 @@ import (
 )
 
 // GetProjectByID will get and return a project by ID and (error or nil)
-func (r *repository) GetProjectMetaData(ctx context.Context, projectID int) (*entity.ProjectMetaData, error) {
+func (r *repository) GetProjectMetaByProjectID(ctx context.Context, projectID int) (*entity.ProjectMetaData, error) {
 	var projectMeta entity.ProjectMetaData
 	// first get time entries
-	timeEntries, err := r.ListTimeEntriesByProject(ctx, projectID)
+	timeEntries, err := r.GetTimeEntryHistory(ctx, projectID)
 	if err != nil {
 		r.l.Fatal(err)
 	}
 	projectMeta.TimeEntries = timeEntries
 	// second get status history
-	statusHistory, err := r.GetStatusHistory(ctx, projectID)
+	statusHistory, err := r.GetStatusHistoryByProjectID(ctx, projectID)
 	if err != nil {
 		r.l.Fatal(err)
 	}

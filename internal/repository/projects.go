@@ -38,8 +38,8 @@ func (r *repository) GetProjectByID(ctx context.Context, projectID int) (*entity
 	return &p, nil
 }
 
-// ListProjects will list projects and return projects
-func (r *repository) ListProjects(ctx context.Context) ([]entity.Project, error) {
+// GetProjects will list projects and return projects
+func (r *repository) GetProjects(ctx context.Context) ([]entity.Project, error) {
 	var list []entity.Project
 	err := r.db.Select().From("projects").All(&list)
 	return list, err

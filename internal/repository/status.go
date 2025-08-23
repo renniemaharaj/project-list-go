@@ -22,9 +22,13 @@ func (r *repository) CreateStatus(ctx context.Context, s *entity.Status) error {
 	})
 }
 
-// GetStatusHistory will return all statuses relating to the projectID (hence, hystory)
-func (r *repository) GetStatusHistory(ctx context.Context, projectID int) ([]entity.Status, error) {
+// GetStatusHistoryByProjectID will return all statuses relating to the projectID (history)
+func (r *repository) GetStatusHistoryByProjectID(ctx context.Context, projectID int) ([]entity.Status, error) {
 	var list []entity.Status
-	err := r.db.Select().From("statuses").Where(&dbx.HashExp{"project_id": projectID}).All(&list)
+	err := r.db.Select().
+		From("statuses").
+		Where(&dbx.HashExp{"project_id": projectID}).
+		OrderBy("id DESC").
+		All(&list)
 	return list, err
 }

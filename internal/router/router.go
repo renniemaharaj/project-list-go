@@ -30,5 +30,10 @@ func SetupRouter() http.Handler {
 		r.Route("/projects", routes.Projects)
 	})
 
+	r.Group(func(r chi.Router) {
+		// r.Use(auth.FirebaseAuth)
+		r.Route("/dashboards", routes.Dashboard)
+	})
+
 	return r
 }

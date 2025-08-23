@@ -32,8 +32,8 @@ func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*
 	return &c, nil
 }
 
-// ListConsultants will get and return all consultants from consultants table
-func (r *repository) ListConsultants(ctx context.Context) ([]entity.Consultant, error) {
+// GetConsultants will get and return all consultants from consultants table
+func (r *repository) GetConsultants(ctx context.Context) ([]entity.Consultant, error) {
 	var list []entity.Consultant
 	err := r.db.Select().From("consultants").All(&list)
 	return list, err
