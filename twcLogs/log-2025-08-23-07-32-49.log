@@ -1,7 +1,0 @@
-2025-08-23 08:45:19.039: ERROR [Dash Router] pq: sorry, too many clients already (dashboards.go:37 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetDashboardMetrics)
-2025-08-23 08:45:20.109: ERROR [Dash Router] pq: sorry, too many clients already (dashboards.go:37 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetDashboardMetrics)
-2025-08-23 08:45:22.129: ERROR [Dash Router] pq: sorry, too many clients already (dashboards.go:37 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetDashboardMetrics)
-5:14.019: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 08:45:19.030: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 08:45:20.104: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 08:45:22.128: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)

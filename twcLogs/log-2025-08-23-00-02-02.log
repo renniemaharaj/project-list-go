@@ -1,1 +1,0 @@
-2025-08-23 00:02:02.581: ERROR [Repository] sql: no rows in result set (meta.go:27 in github.com/renniemaharaj/project-list-go/internal/repository.(*repository).GetProjectMetaData)

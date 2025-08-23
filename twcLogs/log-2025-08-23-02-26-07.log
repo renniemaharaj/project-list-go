@@ -1,6 +1,0 @@
-2025-08-23 04:24:52.386: ERROR [Projects Router] read tcp [::1]:49862->[::1]:5432: wsarecv: An existing connection was forcibly closed by the remote host. (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 04:58:15.148: ERROR [Projects Router] read tcp [::1]:51273->[::1]:5432: wsarecv: An existing connection was forcibly closed by the remote host. (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 06:43:36.012: ERROR [Projects Router] read tcp [::1]:57581->[::1]:5432: wsarecv: An existing connection was forcibly closed by the remote host. (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 06:44:10.254: ERROR [Projects Router] read tcp [::1]:54560->[::1]:5432: wsarecv: An existing connection was forcibly closed by the remote host. (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 06:53:17.277: ERROR [Projects Router] read tcp [::1]:57262->[::1]:5432: wsarecv: An existing connection was forcibly closed by the remote host. (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-tes.GetDashboardMetrics)

@@ -1,4 +1,0 @@
-2025-08-23 09:20:01.889: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 09:20:02.951: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-2025-08-23 09:20:04.973: ERROR [Projects Router] pq: sorry, too many clients already (projects.go:113 in github.com/renniemaharaj/project-list-go/internal/router/routes.GetProjects)
-hboardMetrics)
