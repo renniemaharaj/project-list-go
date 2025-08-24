@@ -32,7 +32,7 @@ func SetupRouter() http.Handler {
 
 	r.Group(func(r chi.Router) {
 		// r.Use(auth.FirebaseAuth)
-		r.Route("/dashboards", routes.Dashboard)
+		r.Route("/dashboard", routes.Dashboard)
 	})
 
 	return r

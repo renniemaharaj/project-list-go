@@ -41,6 +41,20 @@ func (r *repository) GetAllProjectsDesc(ctx context.Context) ([]entity.Project, 
 	return list, err
 }
 
+func (r *repository) GetProjectsPage(ctx context.Context, limit, offset int) ([]entity.Project, error) {
+	var projects []entity.Project
+	err := r.db.Select().
+		From("projects").
+		OrderBy("id DESC").
+		Limit(int64(limit)).
+		Offset(int64(offset)).
+		All(&projects)
+	if err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 // UpdateProjectByStruct will update a project by project struct ID
 func (r *repository) UpdateProjectByStruct(ctx context.Context, p *entity.Project) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {

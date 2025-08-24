@@ -17,10 +17,10 @@ var (
 
 // Projects router, chi routing
 func Projects(r chi.Router) {
-	r.Get("/", GetProjects)
-	r.Get("/byID/{projectID}", GetProjectsByID)
-	r.Get("/byID/{projectID}/meta", GetProjectMetaData)
-	r.Get("/metas", GetProjectMetas)
+	r.Get("/all/page/{pageNumber}", GetAllProjects)
+	r.Get("/one/{projectID}", GetProjectsByID)
+	r.Get("/meta/one/{projectID}", GetProjectMetaData)
+	r.Get("/metas/all", GetProjectMetas)
 }
 
 // GetProjectMetas gets all project metas
@@ -96,20 +96,38 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(projectMeta)
 }
 
-// GetProjects returns all projects
-func GetProjects(w http.ResponseWriter, r *http.Request) {
+// GetAllProjects returns projects paginated by page number
+func GetAllProjects(w http.ResponseWriter, r *http.Request) {
 	// Initialize repository
 	repos, err := repository.Get()
 	if err != nil {
-		http.Error(w, "Failed to initialize repository", 500)
+		http.Error(w, "Failed to initialize repository", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
 
-	// Fetch projects
-	projects, err := repos.GetAllProjectsDesc(r.Context())
+	// Parse page number from URL
+	pageNumberStr := chi.URLParam(r, "pageNumber")
+	if pageNumberStr == "" {
+		http.Error(w, "pageNumber is required", http.StatusBadRequest)
+		projectsLogger.Error("pageNumber was missing from request")
+		return
+	}
+
+	pageNumber, err := strconv.Atoi(pageNumberStr)
+	if err != nil || pageNumber < 0 {
+		http.Error(w, "Invalid page number", http.StatusBadRequest)
+		return
+	}
+
+	// Pagination parameters
+	const pageSize = 5
+	offset := pageNumber * pageSize
+
+	// Fetch projects with limit & offset
+	projects, err := repos.GetProjectsPage(r.Context(), pageSize, offset)
 	if err != nil {
-		http.Error(w, "Failed to fetch projects", 500)
+		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
