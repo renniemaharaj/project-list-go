@@ -22,7 +22,7 @@ func Dashboard(r chi.Router) {
 
 func GetDashboardMetrics(w http.ResponseWriter, r *http.Request) {
 	// Initialize repository
-	repos, err := repository.NewRepository()
+	repos, err := repository.Get()
 	if err != nil {
 		http.Error(w, "Failed to initialize repository", 500)
 		dashboardLogger.Fatal(err)
@@ -31,7 +31,7 @@ func GetDashboardMetrics(w http.ResponseWriter, r *http.Request) {
 
 	dashboardMetrics := entity.DashboardMetrics{}
 	// Fetch projects
-	projects, err := repos.GetProjects(r.Context())
+	projects, err := repos.GetAllProjectsDesc(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", 500)
 		dashboardLogger.Fatal(err)
@@ -67,8 +67,10 @@ func GetDashboardMetrics(w http.ResponseWriter, r *http.Request) {
 		if len(meta.StatusHistory) > 0 {
 			if meta.StatusHistory[0].Title == "completed" {
 				dashboardMetrics.Completed++
-			} else {
+			}
+			if meta.StatusHistory[0].Title == "active" {
 				dashboardMetrics.Active++
+
 			}
 
 			// idle check

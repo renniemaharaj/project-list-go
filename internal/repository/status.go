@@ -7,12 +7,10 @@ import (
 	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
-// =================== STATUS & HISTORY ===================
-
-// CreateStatus will insert a new status relating to project id into status table
-func (r *repository) CreateStatus(ctx context.Context, s *entity.Status) error {
+// InsertProjectStatusByStruct will insert a new status relating to project id into status table
+func (r *repository) InsertProjectStatusByStruct(ctx context.Context, s *entity.Status) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
-		_, err := tx.Insert("statuses", dbx.Params{
+		_, err := tx.Insert("project_statuses", dbx.Params{
 			"title":         s.Title,
 			"description":   s.Description,
 			"project_id":    s.ProjectID,
@@ -22,11 +20,11 @@ func (r *repository) CreateStatus(ctx context.Context, s *entity.Status) error {
 	})
 }
 
-// GetStatusHistoryByProjectID will return all statuses relating to the projectID (history)
+// GetStatusHistoryByProjectID will return all project_statuses relating to the projectID (history)
 func (r *repository) GetStatusHistoryByProjectID(ctx context.Context, projectID int) ([]entity.Status, error) {
 	var list []entity.Status
 	err := r.db.Select().
-		From("statuses").
+		From("project_statuses").
 		Where(&dbx.HashExp{"project_id": projectID}).
 		OrderBy("id DESC").
 		All(&list)

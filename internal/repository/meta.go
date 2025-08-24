@@ -10,7 +10,7 @@ import (
 func (r *repository) GetProjectMetaByProjectID(ctx context.Context, projectID int) (*entity.ProjectMetaData, error) {
 	var projectMeta entity.ProjectMetaData
 	// first get time entries
-	timeEntries, err := r.GetTimeEntryHistory(ctx, projectID)
+	timeEntries, err := r.GetTimeEntryHistoryByProductID(ctx, projectID)
 	if err != nil {
 		r.l.Fatal(err)
 	}
@@ -31,6 +31,12 @@ func (r *repository) GetProjectMetaByProjectID(ctx context.Context, projectID in
 	if err != nil {
 		r.l.Fatal(err)
 	}
-	projectMeta.Manager.ID = manager.ID
+	projectMeta.Manager = *manager
+	// fifth get project consultans
+	projectConsultants, err := r.GetRelatedConsultantsByProjectID(ctx, project.ID)
+	if err != nil {
+		r.l.Fatal(err)
+	}
+	projectMeta.Consultants = projectConsultants
 	return &projectMeta, nil
 }

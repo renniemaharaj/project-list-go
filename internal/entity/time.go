@@ -7,11 +7,11 @@ type TimeEntry struct {
 	ID           int       `json:"id"`
 	Hours        float32   `json:"hours"` // fixed: use float not time.Time
 	Title        string    `json:"title"`
+	ConsultantID int       `json:"consultantID"` // FK → consultants
 	Description  string    `json:"description"`
-	ConsultantID int       `json:"consultantId"` // FK → consultants
-	ProjectID    int       `json:"projectId"`    // FK → projects
-	Type         string    `json:"type"`         // Debit or Credit
-	EntryDate    time.Time `json:"entryDate"`    // when it was logged
+	ProjectID    int       `json:"projectID"` // FK → projects
+	Type         string    `json:"type"`      // Debit or Credit
+	EntryDate    time.Time `json:"entryDate"` // when it was logged
 }
 
 // TimeBudget is not a table itself, it's derived from queries

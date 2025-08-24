@@ -20,18 +20,24 @@ func main() {
 	// allow time for postgres to intialize
 	time.Sleep(5 * time.Second)
 
+	repos, err := repository.Get()
+	if err != nil {
+		l.Fatal(err)
+
+	}
+
 	// will automatically initalize tables
-	if err := repository.InitializeDTables(context.Background()); err != nil {
+	if err := repository.InitializeDatabaseTables(context.Background(), repos); err != nil {
 		panic(err)
 	}
 
 	demoData := true
 	if demoData {
-		repo, err := repository.NewRepository()
+		repo, err := repository.Get()
 		if err != nil {
 			logger.New().Fatal(err)
 		}
-		err = repo.SeedDemoData(context.Background())
+		err = repo.InsertSeededDemoData(context.Background())
 		if err != nil {
 			logger.New().Fatal(err)
 		}

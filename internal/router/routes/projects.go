@@ -26,7 +26,7 @@ func Projects(r chi.Router) {
 // GetProjectMetas gets all project metas
 func GetProjectMetas(w http.ResponseWriter, r *http.Request) {
 	// Initialize repository
-	repos, err := repository.NewRepository()
+	repos, err := repository.Get()
 	if err != nil {
 		http.Error(w, "Failed to initialize repository", 500)
 		projectsLogger.Fatal(err)
@@ -34,7 +34,7 @@ func GetProjectMetas(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch projects
-	projects, err := repos.GetProjects(r.Context())
+	projects, err := repos.GetAllProjectsDesc(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", 500)
 		projectsLogger.Fatal(err)
@@ -76,7 +76,7 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Initialize repository
-	repos, err := repository.NewRepository()
+	repos, err := repository.Get()
 	if err != nil {
 		http.Error(w, "Failed to initialize repository", 500)
 		projectsLogger.Fatal(err)
@@ -99,7 +99,7 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 // GetProjects returns all projects
 func GetProjects(w http.ResponseWriter, r *http.Request) {
 	// Initialize repository
-	repos, err := repository.NewRepository()
+	repos, err := repository.Get()
 	if err != nil {
 		http.Error(w, "Failed to initialize repository", 500)
 		projectsLogger.Fatal(err)
@@ -107,7 +107,7 @@ func GetProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch projects
-	projects, err := repos.GetProjects(r.Context())
+	projects, err := repos.GetAllProjectsDesc(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", 500)
 		projectsLogger.Fatal(err)
@@ -138,7 +138,7 @@ func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Initialize repository
-	repos, err := repository.NewRepository()
+	repos, err := repository.Get()
 	if err != nil {
 		http.Error(w, "Failed to initialize repository", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)

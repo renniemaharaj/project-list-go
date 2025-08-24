@@ -4,16 +4,15 @@ import (
 	"context"
 
 	dbx "github.com/go-ozzo/ozzo-dbx"
+	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
-// =================== PROJECT TAGS ===================
-
-// AddProjectTagByProjectID, using a projectID will insert a new tag into project_tags table
-func (r *repository) AddProjectTagByProjectID(ctx context.Context, projectID int, tag string) error {
+// InsertProjectTagByStruct will insert a project tag into project_tags
+func (r *repository) InsertProjectTagByStruct(ctx context.Context, tag entity.ProjectTag) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		_, err := tx.Insert("project_tags", dbx.Params{
-			"project_id": projectID,
-			"tag":        tag,
+			"project_id": tag.ProjectID,
+			"tag":        tag.Tag,
 		}).Execute()
 		return err
 	})
