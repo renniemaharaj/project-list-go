@@ -7,6 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
+	"github.com/renniemaharaj/project-list-go/internal/cache"
+	"github.com/renniemaharaj/project-list-go/internal/entity"
 	"github.com/renniemaharaj/project-list-go/internal/repository"
 )
 
@@ -22,6 +24,7 @@ func Projects(r chi.Router) {
 	r.Get("/search/{searchQuery}", GetProjectsBySearchQuery)
 }
 
+// Uses a search query to get matching projects
 func GetProjectsBySearchQuery(w http.ResponseWriter, r *http.Request) {
 	searchQuery := chi.URLParam(r, "searchQuery")
 	if searchQuery == "" {
@@ -29,28 +32,26 @@ func GetProjectsBySearchQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize repository
-	repos, err := repository.Get()
+	projects, err := cache.Use("projects:search:"+searchQuery, func() ([]int, error) {
+		repos, err := repository.Get()
+		if err != nil {
+			return nil, err
+		}
+		return repos.GetProjectIDSBySearchQuery(r.Context(), searchQuery)
+	})
+
 	if err != nil {
-		http.Error(w, "Failed to initialize repository", 500)
+		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
 
-	// Get projects by query from repository
-	projects, err := repos.GetProjectIDSBySearchQuery(r.Context(), searchQuery)
-	if err != nil {
-
-	}
-
-	// Return results
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projects)
+	_ = json.NewEncoder(w).Encode(projects)
 }
 
 // GetProjectMetaData returns the meta data for a project by ID
 func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
-	// Get projectID from URL
 	projectIDStr := chi.URLParam(r, "projectID")
 	if projectIDStr == "" {
 		http.Error(w, "projectID is required", http.StatusBadRequest)
@@ -58,7 +59,6 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert string to int
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
 		http.Error(w, "invalid projectID", http.StatusBadRequest)
@@ -66,38 +66,26 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize repository
-	repos, err := repository.Get()
+	projectMeta, err := cache.Use("projects:meta:"+projectIDStr, func() (*entity.ProjectMetaData, error) {
+		repos, err := repository.Get()
+		if err != nil {
+			return nil, err
+		}
+		return repos.GetProjectMetaByProjectID(r.Context(), projectID)
+	})
+
 	if err != nil {
-		http.Error(w, "Failed to initialize repository", 500)
+		http.Error(w, "Failed to fetch project meta", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
 
-	// Fetch projectMeta by ID
-	projectMeta, err := repos.GetProjectMetaByProjectID(r.Context(), projectID)
-	if err != nil {
-		http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
-		projectsLogger.Fatal(err)
-		return
-	}
-
-	// Return JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projectMeta)
+	_ = json.NewEncoder(w).Encode(projectMeta)
 }
 
 // GetAllProjectIDSByPage returns projects paginated by page number
 func GetAllProjectIDSByPage(w http.ResponseWriter, r *http.Request) {
-	// Initialize repository
-	repos, err := repository.Get()
-	if err != nil {
-		http.Error(w, "Failed to initialize repository", http.StatusInternalServerError)
-		projectsLogger.Fatal(err)
-		return
-	}
-
-	// Parse page number from URL
 	pageNumberStr := chi.URLParam(r, "pageNumber")
 	if pageNumberStr == "" {
 		http.Error(w, "pageNumber is required", http.StatusBadRequest)
@@ -111,26 +99,29 @@ func GetAllProjectIDSByPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Pagination parameters
 	const pageSize = 10
 	offset := pageNumber * pageSize
 
-	// Fetch projects with limit & offset
-	projects, err := repos.GetProjectIDSByPage(r.Context(), pageSize, offset)
+	projects, err := cache.Use("projects:page:"+pageNumberStr, func() ([]int, error) {
+		repos, err := repository.Get()
+		if err != nil {
+			return nil, err
+		}
+		return repos.GetProjectIDSByPage(r.Context(), pageSize, offset)
+	})
+
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
 
-	// Return JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projects)
+	_ = json.NewEncoder(w).Encode(projects)
 }
 
 // GetProjectsByID returns a single project by ID
 func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
-	// Get projectID from URL
 	projectIDStr := chi.URLParam(r, "projectID")
 	if projectIDStr == "" {
 		http.Error(w, "projectID is required", http.StatusBadRequest)
@@ -138,7 +129,6 @@ func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Convert string to int
 	projectID, err := strconv.Atoi(projectIDStr)
 	if err != nil {
 		http.Error(w, "invalid projectID", http.StatusBadRequest)
@@ -146,23 +136,20 @@ func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize repository
-	repos, err := repository.Get()
-	if err != nil {
-		http.Error(w, "Failed to initialize repository", http.StatusInternalServerError)
-		projectsLogger.Fatal(err)
-		return
-	}
+	project, err := cache.Use("projects:one:"+projectIDStr, func() (*entity.Project, error) {
+		repos, err := repository.Get()
+		if err != nil {
+			return nil, err
+		}
+		return repos.GetProjectDataByID(r.Context(), projectID)
+	})
 
-	// Fetch project by ID
-	project, err := repos.GetProjectDataByID(r.Context(), projectID)
 	if err != nil {
 		http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
 		return
 	}
 
-	// Return JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(project)
+	_ = json.NewEncoder(w).Encode(project)
 }

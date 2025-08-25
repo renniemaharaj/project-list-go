@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/renniemaharaj/project-list-go/internal/cache"
 	"github.com/renniemaharaj/project-list-go/internal/repository"
 	"github.com/renniemaharaj/project-list-go/internal/router"
 
@@ -28,6 +29,10 @@ func main() {
 
 	// will automatically initalize tables
 	if err := repository.InitializeDatabaseTables(context.Background(), repos); err != nil {
+		panic(err)
+	}
+
+	if err := cache.InitializeRedis(); err != nil {
 		panic(err)
 	}
 
