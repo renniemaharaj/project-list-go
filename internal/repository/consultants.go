@@ -23,7 +23,7 @@ func (r *repository) InsertConsultantByStruct(ctx context.Context, c *entity.Con
 // GetConsultantByID will get and return consultant by id
 func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*entity.Consultant, error) {
 	var c entity.Consultant
-	err := r.db.Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
+	err := r.DB.Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
 	if err != nil {
 		return nil, err
 	}
@@ -32,57 +32,38 @@ func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*
 
 // GetConsultantsByProjectID gets and returns project consultants
 func (r *repository) GetConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
-	var pc = []entity.ConsultantProject{}
-	err := r.db.Select().From("project_consultants").Where(dbx.HashExp{"project_id": projectID}).All(&pc)
+	var consultants []entity.Consultant
+
+	err := r.DB.Select("c.*").
+		From("project_consultants pc").
+		InnerJoin("consultants c", dbx.NewExp("c.id = pc.consultant_id")).
+		Where(dbx.HashExp{"pc.project_id": projectID}).
+		All(&consultants)
+
 	if err != nil {
 		return nil, err
 	}
 
-	var consultants = []entity.Consultant{}
-	for _, c := range pc {
-		consultant, err := r.GetConsultantByID(ctx, c.ConsultantID)
-		if err != nil {
-			return nil, err
-		}
-		consultants = append(consultants, *consultant)
-	}
 	return consultants, nil
 }
 
 // GetRelatedConsultantsByProjectID gets and returns project consultants
 // Includes consultants linked via project_consultants and project_time_entries
 func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
-	uniqueIDs := make(map[int]struct{})
-
-	// 1. Collect consultants from project_consultants
-	var pc []entity.ConsultantProject
-	if err := r.db.Select().From("project_consultants").
-		Where(dbx.HashExp{"project_id": projectID}).All(&pc); err != nil {
-		return nil, err
-	}
-	for _, c := range pc {
-		uniqueIDs[c.ConsultantID] = struct{}{}
-	}
-
-	// 2. Collect consultants from time_entries
-	var tes []entity.TimeEntry
-	if err := r.db.Select("consultant_id").
-		From("project_time_entries").
-		Where(dbx.HashExp{"project_id": projectID}).All(&tes); err != nil {
-		return nil, err
-	}
-	for _, te := range tes {
-		uniqueIDs[te.ConsultantID] = struct{}{}
-	}
-
-	// Fetch consultant details and merge
 	var consultants []entity.Consultant
-	for id := range uniqueIDs {
-		consultant, err := r.GetConsultantByID(ctx, id)
-		if err != nil {
-			return nil, err
-		}
-		consultants = append(consultants, *consultant)
+
+	q := r.DB.Select("c.*").
+		Distinct(true).
+		From("consultants c").
+		InnerJoin("project_consultants pc", dbx.NewExp("c.id = pc.consultant_id")).
+		InnerJoin("project_time_entries te", dbx.NewExp("c.id = te.consultant_id")).
+		Where(dbx.Or(
+			dbx.HashExp{"pc.project_id": projectID},
+			dbx.HashExp{"te.project_id": projectID},
+		))
+
+	if err := q.All(&consultants); err != nil {
+		return nil, err
 	}
 
 	return consultants, nil
@@ -91,7 +72,7 @@ func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, proje
 // GetAllConsultants will get and return all consultants from consultants table
 func (r *repository) GetAllConsultants(ctx context.Context) ([]entity.Consultant, error) {
 	var list []entity.Consultant
-	err := r.db.Select().From("consultants").All(&list)
+	err := r.DB.Select().From("consultants").All(&list)
 	return list, err
 }
 
@@ -110,20 +91,23 @@ func (r *repository) UpdateConsultantByStruct(ctx context.Context, c *entity.Con
 
 // DeleteConsultantByID will delete a consultant by id from consultants table
 func (r *repository) DeleteConsultantByID(ctx context.Context, consultantID int) error {
+	// Delete will be done in a transaction which can be rolled back on returning error
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
+		// 1. remove consultant from consultants tanle
 		_, err := tx.Delete("consultants", dbx.HashExp{"id": consultantID}).Execute()
-		return err
-	})
-}
-
-// InsertConsultantRoleByStruct will delete a consultant by id from consultants table
-func (r *repository) InsertConsultantRoleByStruct(ctx context.Context, consultantRole entity.ConsultantRole) error {
-	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
-		_, err := tx.Insert("consultant_roles",
-			dbx.Params{
-				"consultant_id": consultantRole.ConsultantID,
-				"role":          consultantRole.Role,
-			}).Execute()
-		return err
+		if err != nil {
+			return err
+		}
+		// 2. remove consultant time entries from project_time_entries
+		_, err = tx.Delete("project_time_entries", dbx.HashExp{"consultant_id": consultantID}).Execute()
+		if err != nil {
+			return err
+		}
+		// 3. remove consultant statuses from project_statuses
+		_, err = tx.Delete("project_statuses", dbx.HashExp{"consultant_id": consultantID}).Execute()
+		if err != nil {
+			return err
+		}
+		return nil
 	})
 }

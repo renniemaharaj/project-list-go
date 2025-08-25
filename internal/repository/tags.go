@@ -18,6 +18,16 @@ func (r *repository) InsertProjectTagByStruct(ctx context.Context, tag entity.Pr
 	})
 }
 
+// GetProjectTagsByProjectID, from project_tags table, will return all tags with projectID
+func (r *repository) GetProjectTagsByProjectID(ctx context.Context, projectID int) ([]string, error) {
+	var tags []string
+	err := r.DB.Select("tag").
+		From("project_tags").
+		Where(dbx.HashExp{"project_id": projectID}).OrderBy("id DESC").
+		Column(&tags)
+	return tags, err
+}
+
 // RemoveProjectTagByProjectID, using projectID && tag, will remove tag from project_tags table
 func (r *repository) RemoveProjectTagByProjectID(ctx context.Context, projectID int, tag string) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
@@ -27,14 +37,4 @@ func (r *repository) RemoveProjectTagByProjectID(ctx context.Context, projectID 
 		}).Execute()
 		return err
 	})
-}
-
-// GetProjectTagsByProjectID, from project_tags table, will return all tags with projectID
-func (r *repository) GetProjectTagsByProjectID(ctx context.Context, projectID int) ([]string, error) {
-	var tags []string
-	err := r.db.Select("tag").
-		From("project_tags").
-		Where(dbx.HashExp{"project_id": projectID}).
-		Column(&tags)
-	return tags, err
 }

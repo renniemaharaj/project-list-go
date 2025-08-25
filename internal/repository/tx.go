@@ -9,7 +9,7 @@ import (
 // UseTransaction provides an interface for transactions with defer rollback, error handling
 // and transaction commit
 func (r *repository) UseTransaction(ctx context.Context, consume func(tx *dbx.Tx) error) error {
-	tx, err := r.db.Begin()
+	tx, err := r.DB.Begin()
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 
 // repository struct with dbx singleton and logger
 type repository struct {
-	db *dbx.DB
+	DB *dbx.DB
 	l  *logger.Logger
 }
 
@@ -30,7 +30,7 @@ func Get() (*repository, error) {
 			err = dbErr
 			return
 		}
-		singletonRepo = &repository{db: db, l: logger.New().Prefix("Repository")}
+		singletonRepo = &repository{DB: db, l: logger.New().Prefix("Repository")}
 	})
 	if singletonRepo == nil {
 		return nil, fmt.Errorf("couldn't create repository: %w", err)

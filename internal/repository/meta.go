@@ -6,11 +6,11 @@ import (
 	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
-// GetProjectByID will get and return a project by ID and (error or nil)
+// GetProjectByID will get and return a project meta data by ID and (error or nil)
 func (r *repository) GetProjectMetaByProjectID(ctx context.Context, projectID int) (*entity.ProjectMetaData, error) {
 	var projectMeta entity.ProjectMetaData
 	// first get time entries
-	timeEntries, err := r.GetTimeEntryHistoryByProductID(ctx, projectID)
+	timeEntries, err := r.GetTimeEntryHistoryByProjectID(ctx, projectID)
 	if err != nil {
 		r.l.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func (r *repository) GetProjectMetaByProjectID(ctx context.Context, projectID in
 	}
 	projectMeta.StatusHistory = statusHistory
 	// third get project
-	project, err := r.GetProjectByID(ctx, projectID)
+	project, err := r.GetProjectDataByID(ctx, projectID)
 	if err != nil {
 		r.l.Fatal(err)
 	}

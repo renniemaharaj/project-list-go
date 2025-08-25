@@ -31,11 +31,21 @@ func GetDashboardMetrics(w http.ResponseWriter, r *http.Request) {
 
 	dashboardMetrics := entity.DashboardMetrics{}
 	// Fetch projects
-	projects, err := repos.GetAllProjectsDesc(r.Context())
+	projectsIDS, err := repos.GetAllProjectIDS(r.Context())
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", 500)
 		dashboardLogger.Fatal(err)
 		return
+	}
+
+	// Get project from repository through ids first
+	projects, err := repos.GetProjectsDataByIDS(r.Context(), projectsIDS)
+	if err != nil {
+		dashboardLogger.Fatal(err)
+	}
+
+	if len(projectsIDS) != len(projects) {
+		dashboardLogger.Error("Length of projectIDS does not match length of projects")
 	}
 	dashboardMetrics.Projects = len(projects)
 

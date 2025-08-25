@@ -23,7 +23,7 @@ func (r *repository) InsertProjectStatusByStruct(ctx context.Context, s *entity.
 // GetStatusHistoryByProjectID will return all project_statuses relating to the projectID (history)
 func (r *repository) GetStatusHistoryByProjectID(ctx context.Context, projectID int) ([]entity.Status, error) {
 	var list []entity.Status
-	err := r.db.Select().
+	err := r.DB.Select().
 		From("project_statuses").
 		Where(&dbx.HashExp{"project_id": projectID}).
 		OrderBy("id DESC").

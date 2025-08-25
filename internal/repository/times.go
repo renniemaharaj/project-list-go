@@ -22,20 +22,20 @@ func (r *repository) InsertTimeEntryByStruct(ctx context.Context, e *entity.Time
 	})
 }
 
-// GetTimeEntryByID will return a specific time entry by ID
-func (r *repository) GetTimeEntryByID(ctx context.Context, id int) (*entity.TimeEntry, error) {
+// GetTimeEntryByTimeEntryID will return a specific time entry by ID
+func (r *repository) GetTimeEntryByTimeEntryID(ctx context.Context, id int) (*entity.TimeEntry, error) {
 	var e entity.TimeEntry
-	err := r.db.Select().From("project_time_entries").Where(dbx.HashExp{"id": id}).One(&e)
+	err := r.DB.Select().From("project_time_entries").Where(dbx.HashExp{"id": id}).One(&e)
 	if err != nil {
 		return nil, err
 	}
 	return &e, nil
 }
 
-// GetTimeEntryHistoryByProductID will return all time entries for project
-func (r *repository) GetTimeEntryHistoryByProductID(ctx context.Context, projectID int) ([]entity.TimeEntry, error) {
+// GetTimeEntryHistoryByProjectID will return all time entries for project
+func (r *repository) GetTimeEntryHistoryByProjectID(ctx context.Context, projectID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.db.Select().
+	err := r.DB.Select().
 		From("project_time_entries").
 		Where(dbx.HashExp{"project_id": projectID}).
 		OrderBy("id DESC").
@@ -46,7 +46,7 @@ func (r *repository) GetTimeEntryHistoryByProductID(ctx context.Context, project
 // GetTimeEntryHistoryByConsultantID will return all time entries by consultant
 func (r *repository) GetTimeEntryHistoryByConsultantID(ctx context.Context, consultantID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.db.Select().
+	err := r.DB.Select().
 		From("project_time_entries").
 		Where(dbx.HashExp{"consultant_id": consultantID}).
 		OrderBy("id DESC").
@@ -70,8 +70,8 @@ func (r *repository) UpdateTimeEntryByStruct(ctx context.Context, e *entity.Time
 	})
 }
 
-// DeleteTimeEntryByID will delete a time entry by ID
-func (r *repository) DeleteTimeEntryByID(ctx context.Context, id int) error {
+// DeleteTimeEntryByTimeEntryID will delete a time entry by ID
+func (r *repository) DeleteTimeEntryByTimeEntryID(ctx context.Context, id int) error {
 	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		_, err := tx.Delete("project_time_entries", dbx.HashExp{"id": id}).Execute()
 		return err

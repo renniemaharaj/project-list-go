@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
-	"github.com/renniemaharaj/project-list-go/internal/entity"
 	"github.com/renniemaharaj/project-list-go/internal/repository"
 )
 
@@ -17,14 +16,19 @@ var (
 
 // Projects router, chi routing
 func Projects(r chi.Router) {
-	r.Get("/all/page/{pageNumber}", GetAllProjects)
+	r.Get("/page/{pageNumber}", GetAllProjectIDSByPage)
 	r.Get("/one/{projectID}", GetProjectsByID)
-	r.Get("/meta/one/{projectID}", GetProjectMetaData)
-	r.Get("/metas/all", GetProjectMetas)
+	r.Get("/meta/{projectID}", GetProjectMetaData)
+	r.Get("/search/{searchQuery}", GetProjectsBySearchQuery)
 }
 
-// GetProjectMetas gets all project metas
-func GetProjectMetas(w http.ResponseWriter, r *http.Request) {
+func GetProjectsBySearchQuery(w http.ResponseWriter, r *http.Request) {
+	searchQuery := chi.URLParam(r, "searchQuery")
+	if searchQuery == "" {
+		http.Error(w, "search query required", http.StatusBadRequest)
+		return
+	}
+
 	// Initialize repository
 	repos, err := repository.Get()
 	if err != nil {
@@ -33,28 +37,15 @@ func GetProjectMetas(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch projects
-	projects, err := repos.GetAllProjectsDesc(r.Context())
+	// Get projects by query from repository
+	projects, err := repos.GetProjectIDSBySearchQuery(r.Context(), searchQuery)
 	if err != nil {
-		http.Error(w, "Failed to fetch projects", 500)
-		projectsLogger.Fatal(err)
-		return
+
 	}
 
-	projectMetas := []entity.ProjectMetaData{}
-	for _, p := range projects {
-		projectMeta, err := repos.GetProjectMetaByProjectID(r.Context(), p.ID)
-		if err != nil {
-			http.Error(w, "Failed to fetch project metas", 500)
-			projectsLogger.Fatal(err)
-			return
-		}
-		projectMetas = append(projectMetas, *projectMeta)
-	}
-
-	// Return JSON
+	// Return results
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(projectMetas)
+	json.NewEncoder(w).Encode(projects)
 }
 
 // GetProjectMetaData returns the meta data for a project by ID
@@ -96,8 +87,8 @@ func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(projectMeta)
 }
 
-// GetAllProjects returns projects paginated by page number
-func GetAllProjects(w http.ResponseWriter, r *http.Request) {
+// GetAllProjectIDSByPage returns projects paginated by page number
+func GetAllProjectIDSByPage(w http.ResponseWriter, r *http.Request) {
 	// Initialize repository
 	repos, err := repository.Get()
 	if err != nil {
@@ -121,11 +112,11 @@ func GetAllProjects(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Pagination parameters
-	const pageSize = 5
+	const pageSize = 10
 	offset := pageNumber * pageSize
 
 	// Fetch projects with limit & offset
-	projects, err := repos.GetProjectsPage(r.Context(), pageSize, offset)
+	projects, err := repos.GetProjectIDSByPage(r.Context(), pageSize, offset)
 	if err != nil {
 		http.Error(w, "Failed to fetch projects", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)
@@ -164,7 +155,7 @@ func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch project by ID
-	project, err := repos.GetProjectByID(r.Context(), projectID)
+	project, err := repos.GetProjectDataByID(r.Context(), projectID)
 	if err != nil {
 		http.Error(w, "Failed to fetch project", http.StatusInternalServerError)
 		projectsLogger.Fatal(err)

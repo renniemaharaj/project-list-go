@@ -16,7 +16,7 @@ import (
 func (r *repository) InsertSeededDemoData(ctx context.Context) error {
 	// Check if projects already exist
 	var count int
-	if err := r.db.NewQuery("SELECT COUNT(*) FROM projects").Row(&count); err != nil {
+	if err := r.DB.NewQuery("SELECT COUNT(*) FROM projects").Row(&count); err != nil {
 		return err
 	}
 	if count > 0 {
@@ -48,7 +48,7 @@ func (r *repository) InsertSeededDemoData(ctx context.Context) error {
 		if err := r.InsertConsultantByStruct(ctx, c); err != nil {
 			return err
 		}
-		if err := r.db.NewQuery("SELECT id FROM consultants WHERE email = {:email}").Bind(dbx.Params{"email": c.Email}).Row(&c.ID); err != nil {
+		if err := r.DB.NewQuery("SELECT id FROM consultants WHERE email = {:email}").Bind(dbx.Params{"email": c.Email}).Row(&c.ID); err != nil {
 			return err
 		}
 
@@ -86,7 +86,7 @@ func (r *repository) generateProject(ctx context.Context, c *entity.Consultant, 
 	if err := r.InsertProjectByStruct(ctx, project); err != nil {
 		return err
 	}
-	if err := r.db.NewQuery("SELECT id FROM projects WHERE number = {:number}").Bind(dbx.Params{"number": project.Number}).Row(&project.ID); err != nil {
+	if err := r.DB.NewQuery("SELECT id FROM projects WHERE number = {:number}").Bind(dbx.Params{"number": project.Number}).Row(&project.ID); err != nil {
 		return err
 	}
 
