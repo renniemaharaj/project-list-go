@@ -2,8 +2,8 @@ package entity
 
 import "time"
 
-// Status struct
-type Status struct {
+// ProjectStatus struct
+type ProjectStatus struct {
 	ID           int       `json:"id"`
 	Title        string    `json:"title"`
 	ProjectID    int       `json:"projectID"`

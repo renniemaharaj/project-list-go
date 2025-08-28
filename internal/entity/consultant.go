@@ -18,7 +18,7 @@ type ConsultantRole struct {
 }
 
 // A consultant project struct
-type ConsultantProject struct {
+type ProjectConsultant struct {
 	ID           int    `json:"ID"`
 	ProjectID    int    `json:"projectID"`
 	ConsultantID int    `json:"consultantID"`

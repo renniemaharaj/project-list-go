@@ -1,15 +1,37 @@
-package repository
+package consultant
 
 import (
 	"context"
 
 	dbx "github.com/go-ozzo/ozzo-dbx"
+	"github.com/renniemaharaj/grouplogs/pkg/logger"
+	"github.com/renniemaharaj/project-list-go/internal/database"
 	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
+type Repository interface {
+	InsertConsultantByStruct(ctx context.Context, c *entity.Consultant) error
+	GetConsultantByID(ctx context.Context, consultantID int) (*entity.Consultant, error)
+	GetConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error)
+	GetRelatedConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error)
+	GetAllConsultants(ctx context.Context) ([]entity.Consultant, error)
+	UpdateConsultantByStruct(ctx context.Context, c *entity.Consultant) error
+	DeleteConsultantByID(ctx context.Context, consultantID int) error
+	InsertProjectConsultantByStruct(ctx context.Context, projectConsultant entity.ProjectConsultant) error
+}
+
+type repository struct {
+	dbContext *database.DBContext
+	logger    *logger.Logger
+}
+
+func NewRepository(dbContext *database.DBContext, _l *logger.Logger) Repository {
+	return &repository{dbContext, _l}
+}
+
 // InsertConsultantByStruct will insert a consultant into consultans table from consultant struct
 func (r *repository) InsertConsultantByStruct(ctx context.Context, c *entity.Consultant) error {
-	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
+	return r.dbContext.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		_, err := tx.Insert("consultants", dbx.Params{
 			"first_name":      c.FirstName,
 			"last_name":       c.LastName,
@@ -23,7 +45,7 @@ func (r *repository) InsertConsultantByStruct(ctx context.Context, c *entity.Con
 // GetConsultantByID will get and return consultant by id
 func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*entity.Consultant, error) {
 	var c entity.Consultant
-	err := r.DB.Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
+	err := r.dbContext.DBX.WithContext(ctx).Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +56,7 @@ func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*
 func (r *repository) GetConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
 	var consultants []entity.Consultant
 
-	err := r.DB.Select("c.*").
+	err := r.dbContext.DBX.WithContext(ctx).Select("c.*").
 		From("project_consultants pc").
 		InnerJoin("consultants c", dbx.NewExp("c.id = pc.consultant_id")).
 		Where(dbx.HashExp{"pc.project_id": projectID}).
@@ -52,7 +74,7 @@ func (r *repository) GetConsultantsByProjectID(ctx context.Context, projectID in
 func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
 	var consultants []entity.Consultant
 
-	q := r.DB.Select("c.*").
+	q := r.dbContext.DBX.WithContext(ctx).Select("c.*").
 		Distinct(true).
 		From("consultants c").
 		InnerJoin("project_consultants pc", dbx.NewExp("c.id = pc.consultant_id")).
@@ -72,13 +94,13 @@ func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, proje
 // GetAllConsultants will get and return all consultants from consultants table
 func (r *repository) GetAllConsultants(ctx context.Context) ([]entity.Consultant, error) {
 	var list []entity.Consultant
-	err := r.DB.Select().From("consultants").All(&list)
+	err := r.dbContext.DBX.WithContext(ctx).Select().From("consultants").All(&list)
 	return list, err
 }
 
 // UpdateConsultantByStruct will update a consultant from consultants table
 func (r *repository) UpdateConsultantByStruct(ctx context.Context, c *entity.Consultant) error {
-	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
+	return r.dbContext.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		_, err := tx.Update("consultants", dbx.Params{
 			"first_name":      c.FirstName,
 			"last_name":       c.LastName,
@@ -92,7 +114,7 @@ func (r *repository) UpdateConsultantByStruct(ctx context.Context, c *entity.Con
 // DeleteConsultantByID will delete a consultant by id from consultants table
 func (r *repository) DeleteConsultantByID(ctx context.Context, consultantID int) error {
 	// Delete will be done in a transaction which can be rolled back on returning error
-	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
+	return r.dbContext.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		// 1. remove consultant from consultants tanle
 		_, err := tx.Delete("consultants", dbx.HashExp{"id": consultantID}).Execute()
 		if err != nil {
@@ -109,5 +131,17 @@ func (r *repository) DeleteConsultantByID(ctx context.Context, consultantID int)
 			return err
 		}
 		return nil
+	})
+}
+
+// InsertProjectConsultantByStruct adds a consultant to project
+func (r *repository) InsertProjectConsultantByStruct(ctx context.Context, projectConsultant entity.ProjectConsultant) error {
+	return r.dbContext.UseTransaction(ctx, func(tx *dbx.Tx) error {
+		_, err := tx.Insert("project_consultants", dbx.Params{
+			"consultant_id": projectConsultant.ConsultantID,
+			"project_id":    projectConsultant.ProjectID,
+			"role":          projectConsultant.Role,
+		}).Execute()
+		return err
 	})
 }

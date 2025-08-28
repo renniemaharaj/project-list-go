@@ -13,9 +13,3 @@ type TimeEntry struct {
 	Type         string    `json:"type"`      // Debit or Credit
 	EntryDate    time.Time `json:"entryDate"` // when it was logged
 }
-
-// TimeBudget is not a table itself, it's derived from queries
-type TimeBudget struct {
-	ID          int `json:"id"`
-	TimeEntryID int `json:"timeEntryID"`
-}

@@ -1,7 +1,7 @@
 package entity
 
 // The defined dashboard metrics type
-type DashboardMetrics struct {
+type MetricsDashboard struct {
 	Projects               int     `json:"projects"`
 	Active                 int     `json:"active"`
 	Completed              int     `json:"completed"`

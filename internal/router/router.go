@@ -3,7 +3,10 @@ package router
 import (
 	"net/http"
 
+	"github.com/renniemaharaj/project-list-go/internal/dashboard"
+	"github.com/renniemaharaj/project-list-go/internal/meta"
 	cors "github.com/renniemaharaj/project-list-go/internal/middleware"
+	"github.com/renniemaharaj/project-list-go/internal/project"
 	"github.com/renniemaharaj/project-list-go/internal/router/routes"
 
 	"github.com/go-chi/chi/v5"
@@ -27,12 +30,16 @@ func SetupRouter() http.Handler {
 	// protected routes
 	r.Group(func(r chi.Router) {
 		// r.Use(auth.FirebaseAuth)
-		r.Route("/projects", routes.Projects)
+		r.Route("/project", project.ProjectHandler)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Route("/meta", meta.Meta)
 	})
 
 	r.Group(func(r chi.Router) {
 		// r.Use(auth.FirebaseAuth)
-		r.Route("/dashboard", routes.Dashboard)
+		r.Route("/dashboard", dashboard.Dashboard)
 	})
 
 	return r

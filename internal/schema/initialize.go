@@ -1,11 +1,26 @@
-package repository
+package schema
 
 import (
 	"context"
 	"fmt"
 
 	dbx "github.com/go-ozzo/ozzo-dbx"
+	"github.com/renniemaharaj/grouplogs/pkg/logger"
+	"github.com/renniemaharaj/project-list-go/internal/database"
 )
+
+type Repository interface {
+	InitializeDatabaseTables(ctx context.Context) error
+}
+
+type repository struct {
+	dbContext *database.DBContext
+	l         *logger.Logger
+}
+
+func NewRepository(_db *database.DBContext, _l *logger.Logger) Repository {
+	return &repository{_db, _l}
+}
 
 // InitializeDatabaseTables initializes the database schema for the project-tracking domain.
 //
@@ -33,20 +48,20 @@ import (
 //
 // Error handling: schema creation is wrapped in a transaction using UseTransaction API.
 // Any failure aborts and rolls back changes automatically.
-func InitializeDatabaseTables(ctx context.Context, r *repository) error {
-	return r.UseTransaction(ctx, func(tx *dbx.Tx) error {
+func (r *repository) InitializeDatabaseTables(ctx context.Context) error {
+	return r.dbContext.UseTransaction(ctx, func(tx *dbx.Tx) error {
 		// 1) Domain (independent)
-		if err := createDomainIndependentTables(ctx, tx); err != nil {
+		if err := createDomainIndependentTables(tx); err != nil {
 			return fmt.Errorf("init tables (domain independent) error: %w", err)
 		}
 
 		// 2) Domain (dependent)
-		if err := createDomainDependentTables(ctx, tx); err != nil {
+		if err := createDomainDependentTables(tx); err != nil {
 			return fmt.Errorf("init tables (domain dependent) error: %w", err)
 		}
 
 		// 3) Non‑domain (dependent)
-		if err := createNonDomainDependentTables(ctx, tx); err != nil {
+		if err := createNonDomainDependentTables(tx); err != nil {
 			return fmt.Errorf("init tables (non-domain dependent) error: %w", err)
 		}
 
@@ -57,7 +72,7 @@ func InitializeDatabaseTables(ctx context.Context, r *repository) error {
 // createDomainIndependentTables creates tables that do not depend on any other
 // relations. These are foundational catalogs/dimensions used by the rest of the
 // schema.
-func createDomainIndependentTables(ctx context.Context, tx *dbx.Tx) error {
+func createDomainIndependentTables(tx *dbx.Tx) error {
 	queries := []string{
 		// consultants -- single source of truth for people (one row per person)
 		`CREATE TABLE IF NOT EXISTS consultants (
@@ -73,7 +88,7 @@ func createDomainIndependentTables(ctx context.Context, tx *dbx.Tx) error {
 
 // createDomainDependentTables creates domain relations that depend on domain
 // catalogs already defined (e.g., projects referencing consultants as manager).
-func createDomainDependentTables(ctx context.Context, tx *dbx.Tx) error {
+func createDomainDependentTables(tx *dbx.Tx) error {
 	queries := []string{
 		// projects -- core domain entity
 		//
@@ -99,7 +114,7 @@ func createDomainDependentTables(ctx context.Context, tx *dbx.Tx) error {
 
 // createNonDomainDependentTables creates operational/fact and association tables
 // that depend on the domain entities.
-func createNonDomainDependentTables(ctx context.Context, tx *dbx.Tx) error {
+func createNonDomainDependentTables(tx *dbx.Tx) error {
 	queries := []string{
 		// project_time_entries -- hours logged against a project (and usually by a consultant)
 		`CREATE TABLE IF NOT EXISTS project_time_entries (

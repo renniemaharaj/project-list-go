@@ -6,29 +6,27 @@ import (
 	"time"
 
 	"github.com/renniemaharaj/project-list-go/internal/cache"
-	"github.com/renniemaharaj/project-list-go/internal/repository"
+	"github.com/renniemaharaj/project-list-go/internal/database"
+	"github.com/renniemaharaj/project-list-go/internal/demo"
 	"github.com/renniemaharaj/project-list-go/internal/router"
+	"github.com/renniemaharaj/project-list-go/internal/schema"
 
-	"github.com/renniemaharaj/conveyor/pkg/conveyor"
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
 )
 
 func main() {
-	l := logger.New().Prefix("Backend")
-	m := conveyor.CreateManager().Start() // todo: utilize conveyor elsewhere
-	m.Start()
+	mainLogger := logger.New().Prefix("Backend")
 
-	// allow time for postgres to intialize
+	// allow time for postgres to initialize
 	time.Sleep(5 * time.Second)
-
-	repos, err := repository.Get()
+	_, err := database.Automatic.Get()
 	if err != nil {
-		l.Fatal(err)
+		panic(err)
 
 	}
 
-	// will automatically initalize tables
-	if err := repository.InitializeDatabaseTables(context.Background(), repos); err != nil {
+	// will automatically initialize tables
+	if err := schema.NewRepository(database.Automatic, mainLogger).InitializeDatabaseTables(context.Background()); err != nil {
 		panic(err)
 	}
 
@@ -38,11 +36,7 @@ func main() {
 
 	demoData := true
 	if demoData {
-		repo, err := repository.Get()
-		if err != nil {
-			logger.New().Fatal(err)
-		}
-		err = repo.InsertSeededDemoData(context.Background())
+		err = demo.NewRepository(database.Automatic, mainLogger).InsertSeededDemoData(context.Background())
 		if err != nil {
 			logger.New().Fatal(err)
 		}
@@ -50,9 +44,9 @@ func main() {
 	// setup chi router and start server
 	r := router.SetupRouter()
 	go func() {
-		l.Info("Starting server on :8081")
+		mainLogger.Info("Starting server on :8081")
 		if err := http.ListenAndServe(":8081", r); err != nil {
-			l.Fatal(err)
+			mainLogger.Fatal(err)
 		}
 	}()
 
