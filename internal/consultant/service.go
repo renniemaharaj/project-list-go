@@ -54,7 +54,7 @@ func (s *service) InsertConsultantByStruct(ctx context.Context, c *Consultant) e
 
 // Gets consultant by id
 func (s *service) GetConsultantByID(ctx context.Context, consultantID int) (*Consultant, error) {
-	c, err := s.repo.GetConsultantByID(ctx, consultantID)
+	c, err := s.repo.GetConsultantDataByID(ctx, consultantID)
 	if err != nil {
 		return &Consultant{}, err
 	}

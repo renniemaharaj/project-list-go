@@ -17,11 +17,11 @@ var (
 )
 
 func Meta(r chi.Router) {
-	r.Get("/meta", GetProjectMetaData)
+	r.Get("/{projectID}", GetProjectMetaByProjectID)
 }
 
-// GetProjectMetaData returns the meta data for a project by ID
-func GetProjectMetaData(w http.ResponseWriter, r *http.Request) {
+// GetProjectMetaByProjectID returns the meta data for a project by ID
+func GetProjectMetaByProjectID(w http.ResponseWriter, r *http.Request) {
 	projectIDStr := chi.URLParam(r, "projectID")
 	if projectIDStr == "" {
 		http.Error(w, "projectID is required", http.StatusBadRequest)

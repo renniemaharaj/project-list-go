@@ -16,6 +16,7 @@ import (
 	"github.com/renniemaharaj/project-list-go/internal/entity"
 	internalMeta "github.com/renniemaharaj/project-list-go/internal/meta"
 	internalProject "github.com/renniemaharaj/project-list-go/internal/project"
+	"github.com/renniemaharaj/project-list-go/internal/utils"
 )
 
 // Metrics struct for dashboard workers
@@ -47,20 +48,6 @@ func proactivelyCacheProjectData(projects []entity.Project) {
 	}
 }
 
-// Internal function that controls a value with max and min
-func minMax(min, v, max int) int {
-	switch {
-	case v < min:
-		return min
-	case max == 0:
-		return v
-	case v > max:
-		return max
-	default:
-		return v
-	}
-}
-
 func Dashboard(r chi.Router) {
 	r.Get("/", GetMetricsDashboard)
 }
@@ -76,16 +63,17 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 
 		// 1) Fetch project IDs (cheap)
 		// repository does not offer get all projects in complete (more performant to return ids)
-		projectIDs, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetAllProjectIDS(ctx)
+		projectIDS, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetAllProjectIDS(ctx)
 		if err != nil {
 			return entity.MetricsDashboard{}, err
 		}
-		if len(projectIDs) == 0 {
+		if len(projectIDS) == 0 {
 			return entity.MetricsDashboard{}, nil
 		}
 
+		projectMetas, projects, err := internalMeta.NewRepository(database.Automatic, dashboardLogger).GetProjectsMetaByProjectIDS(ctx, projectIDS, true)
 		// 2) Fetch project rows in bulk (cheap relative to per-project meta)
-		projects, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetProjectsDataByIDS(ctx, projectIDs)
+		// projects, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetProjectsDataByIDS(ctx, projectIDS)
 		if err != nil {
 			return entity.MetricsDashboard{}, err
 		}
@@ -110,11 +98,15 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 		errs := make(chan error, 1)   // first error wins
 
 		// Prevents < 4 and uncaps
-		workerCount := minMax(4, runtime.NumCPU()*4, 0)
+		workerCount := utils.MinMax(200, runtime.NumCPU()*4, 0)
 		worker := func(ctx context.Context) {
 			for id := range jobs {
 				// Use cache.Use around meta fetch
 				meta, metaError := cache.Use(fmt.Sprintf("projects:meta:%d", id), func() (entity.ProjectMeta, error) {
+					if pm, ok := projectMetas[id]; ok {
+						return pm, nil
+					}
+
 					pm, err := internalMeta.NewRepository(database.Automatic, dashboardLogger).GetProjectMetaByProjectID(ctx, id)
 					return *pm, err
 				})

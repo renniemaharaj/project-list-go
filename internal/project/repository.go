@@ -8,7 +8,7 @@ import (
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
 	"github.com/renniemaharaj/project-list-go/internal/database"
 	"github.com/renniemaharaj/project-list-go/internal/entity"
-	internalIDRows "github.com/renniemaharaj/project-list-go/internal/idRow"
+	internalIDField "github.com/renniemaharaj/project-list-go/internal/idRow"
 )
 
 type Repository interface {
@@ -17,7 +17,7 @@ type Repository interface {
 	GetProjectsDataByIDS(ctx context.Context, ids []int) ([]entity.Project, error)
 	GetAllProjectIDS(ctx context.Context) ([]int, error)
 	GetProjectIDSByPage(ctx context.Context, limit, offset int) ([]int, error)
-	GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string) ([]int, error)
+	GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string, limit, offset int) ([]int, error)
 	UpdateProjectByStruct(ctx context.Context, p *entity.Project) error
 	DeleteProjectByID(ctx context.Context, projectID int) error
 }
@@ -51,7 +51,7 @@ func (r *repository) InsertProjectByStruct(ctx context.Context, p *entity.Projec
 // GetProjectDataByID will get and return a project by ID and (error or nil)
 func (r *repository) GetProjectDataByID(ctx context.Context, projectID int) (*entity.Project, error) {
 	var Project entity.Project
-	err := r.dbContext.DBX.WithContext(ctx).Select().From("projects").Where(dbx.HashExp{"id": projectID}).One(&Project)
+	err := r.dbContext.Get().WithContext(ctx).Select().From("projects").Where(dbx.HashExp{"id": projectID}).One(&Project)
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +64,14 @@ func (r *repository) GetProjectsDataByIDS(ctx context.Context, ids []int) ([]ent
 		return []entity.Project{}, nil
 	}
 
-	// convert []int → []interface{} inline
+	// convert []int -> []interface{} inline
 	args := make([]interface{}, len(ids))
 	for i, id := range ids {
 		args[i] = id
 	}
 
 	var projects []entity.Project
-	err := r.dbContext.DBX.WithContext(ctx).Select().
+	err := r.dbContext.Get().WithContext(ctx).Select().
 		From("projects").
 		Where(dbx.In("id", args...)).
 		All(&projects)
@@ -81,48 +81,48 @@ func (r *repository) GetProjectsDataByIDS(ctx context.Context, ids []int) ([]ent
 
 // GetAllProjectIDS will list projects and return their IDs
 func (r *repository) GetAllProjectIDS(ctx context.Context) ([]int, error) {
-	idRows := internalIDRows.IDRows{}
+	idFields := []internalIDField.IDField{}
 
-	err := r.dbContext.DBX.WithContext(ctx).Select("p.id").
+	err := r.dbContext.Get().WithContext(ctx).Select("p.id").
 		From("projects p").
 		OrderBy("id DESC").
-		All(&idRows)
+		All(&idFields)
 	if err != nil {
 		return nil, err
 	}
 
 	// Extract just the ints
-	ids := idRows.ToIntSlice()
+	ids := internalIDField.ToIntSlice(idFields)
 	return ids, nil
 }
 
 // GetProjectIDSByPage will list all projects by page
 func (r *repository) GetProjectIDSByPage(ctx context.Context, limit, offset int) ([]int, error) {
-	idRows := internalIDRows.IDRows{}
+	idFields := []internalIDField.IDField{}
 
-	err := r.dbContext.DBX.WithContext(ctx).Select("p.id").
+	err := r.dbContext.Get().WithContext(ctx).Select("p.id").
 		From("projects p").
 		OrderBy("id DESC").
 		Limit(int64(limit)).
 		Offset(int64(offset)).
 		AndOrderBy("id DESC").
-		All(&idRows)
+		All(&idFields)
 	if err != nil {
 		return nil, err
 	}
 
 	// Extract just the ints
-	ids := idRows.ToIntSlice()
+	ids := internalIDField.ToIntSlice(idFields)
 	return ids, nil
 }
 
 // GetProjectIDSBySearchQuery will use searchQuery and return matching project IDS
-func (r *repository) GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string) ([]int, error) {
+func (r *repository) GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string, limit, offset int) ([]int, error) {
 	// Split `+` separated terms
 	terms := strings.Split(searchQuery, "+")
 
 	// Base query with joins
-	q := r.dbContext.DBX.WithContext(ctx).Select("p.id").
+	q := r.dbContext.Get().WithContext(ctx).Select("p.id").
 		Distinct(true).
 		From("projects p").
 		InnerJoin("project_consultants pc", dbx.NewExp("pc.project_id = p.id")).
@@ -150,14 +150,17 @@ func (r *repository) GetProjectIDSBySearchQuery(ctx context.Context, searchQuery
 	}
 
 	// Execute query
-	idRows := internalIDRows.IDRows{}
-	err := q.All(&idRows)
+	idFields := []internalIDField.IDField{}
+	err := q.Limit(int64(limit)).
+		Offset(int64(offset)).
+		OrderBy("id DESC").
+		All(&idFields)
 	if err != nil {
 		return nil, err
 	}
 
 	// Extract just the ints
-	ids := idRows.ToIntSlice()
+	ids := internalIDField.ToIntSlice(idFields)
 	return ids, nil
 }
 

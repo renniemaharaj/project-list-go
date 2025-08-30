@@ -36,7 +36,7 @@ func (r *repository) InsertProjectTagByStruct(ctx context.Context, tag entity.Pr
 // GetProjectTagsByProjectID, from project_tags table, will return all tags with projectID
 func (r *repository) GetProjectTagsByProjectID(ctx context.Context, projectID int) ([]string, error) {
 	var tags []string
-	err := r.dbContext.DBX.WithContext(ctx).Select("tag").
+	err := r.dbContext.Get().WithContext(ctx).Select("tag").
 		From("project_tags").
 		Where(dbx.HashExp{"project_id": projectID}).OrderBy("id DESC").
 		Column(&tags)

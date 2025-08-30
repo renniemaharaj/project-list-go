@@ -11,9 +11,11 @@ import (
 
 type Repository interface {
 	InsertConsultantByStruct(ctx context.Context, c *entity.Consultant) error
-	GetConsultantByID(ctx context.Context, consultantID int) (*entity.Consultant, error)
+	GetConsultantDataByID(ctx context.Context, consultantID int) (*entity.Consultant, error)
+	GetConsultantDataByIDS(ctx context.Context, consultantIDS []int) ([]entity.Consultant, error)
 	GetConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error)
 	GetRelatedConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error)
+	GetRelatedConsultantsByProjectsIDS(ctx context.Context, projectIDs []int) ([]entity.ProjectConsultantLink, error)
 	GetAllConsultants(ctx context.Context) ([]entity.Consultant, error)
 	UpdateConsultantByStruct(ctx context.Context, c *entity.Consultant) error
 	DeleteConsultantByID(ctx context.Context, consultantID int) error
@@ -42,10 +44,29 @@ func (r *repository) InsertConsultantByStruct(ctx context.Context, c *entity.Con
 	})
 }
 
-// GetConsultantByID will get and return consultant by id
-func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*entity.Consultant, error) {
+// GetConsultantDataByIDS will get and return consultants by a list of IDs
+func (r *repository) GetConsultantDataByIDS(ctx context.Context, consultantIDS []int) ([]entity.Consultant, error) {
+	var list []entity.Consultant
+
+	// Convert []int -> []interface{} for dbx.In
+	args := make([]interface{}, len(consultantIDS))
+	for i, id := range consultantIDS {
+		args[i] = id
+	}
+
+	err := r.dbContext.Get().WithContext(ctx).Select().
+		From("consultants").
+		Where(dbx.In("id", args...)).
+		OrderBy("id DESC").
+		All(&list)
+
+	return list, err
+}
+
+// GetConsultantDataByID will get and return consultant by id
+func (r *repository) GetConsultantDataByID(ctx context.Context, consultantID int) (*entity.Consultant, error) {
 	var c entity.Consultant
-	err := r.dbContext.DBX.WithContext(ctx).Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
+	err := r.dbContext.Get().WithContext(ctx).Select().From("consultants").Where(dbx.HashExp{"id": consultantID}).One(&c)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +77,7 @@ func (r *repository) GetConsultantByID(ctx context.Context, consultantID int) (*
 func (r *repository) GetConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
 	var consultants []entity.Consultant
 
-	err := r.dbContext.DBX.WithContext(ctx).Select("c.*").
+	err := r.dbContext.Get().WithContext(ctx).Select("c.*").
 		From("project_consultants pc").
 		InnerJoin("consultants c", dbx.NewExp("c.id = pc.consultant_id")).
 		Where(dbx.HashExp{"pc.project_id": projectID}).
@@ -69,12 +90,44 @@ func (r *repository) GetConsultantsByProjectID(ctx context.Context, projectID in
 	return consultants, nil
 }
 
+// GetRelatedConsultantsByProjectsIDS gets and returns project consultants for multiple project IDs
+// Includes consultants linked via project_consultants and project_time_entries
+func (r *repository) GetRelatedConsultantsByProjectsIDS(ctx context.Context, projectIDs []int) ([]entity.ProjectConsultantLink, error) {
+	var consultants []entity.ProjectConsultantLink
+
+	// Convert []int -> []interface{} for dbx.In
+	args := make([]interface{}, len(projectIDs))
+	for i, id := range projectIDs {
+		args[i] = id
+	}
+
+	q1 := r.dbContext.Get().WithContext(ctx).
+		Select("c.*", "pc.project_id").
+		From("consultants c").
+		InnerJoin("project_consultants pc", dbx.NewExp("c.id = pc.consultant_id")).
+		Where(dbx.In("pc.project_id", args...))
+
+	q2 := r.dbContext.Get().WithContext(ctx).
+		Select("c.*", "te.project_id").
+		From("consultants c").
+		InnerJoin("project_time_entries te", dbx.NewExp("c.id = te.consultant_id")).
+		Where(dbx.In("te.project_id", args...))
+
+	sql := q1.Union(q2.Build())
+
+	if err := sql.All(&consultants); err != nil {
+		return nil, err
+	}
+
+	return consultants, nil
+}
+
 // GetRelatedConsultantsByProjectID gets and returns project consultants
 // Includes consultants linked via project_consultants and project_time_entries
 func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, projectID int) ([]entity.Consultant, error) {
 	var consultants []entity.Consultant
 
-	q := r.dbContext.DBX.WithContext(ctx).Select("c.*").
+	q := r.dbContext.Get().WithContext(ctx).Select("c.*").
 		Distinct(true).
 		From("consultants c").
 		InnerJoin("project_consultants pc", dbx.NewExp("c.id = pc.consultant_id")).
@@ -94,7 +147,7 @@ func (r *repository) GetRelatedConsultantsByProjectID(ctx context.Context, proje
 // GetAllConsultants will get and return all consultants from consultants table
 func (r *repository) GetAllConsultants(ctx context.Context) ([]entity.Consultant, error) {
 	var list []entity.Consultant
-	err := r.dbContext.DBX.WithContext(ctx).Select().From("consultants").All(&list)
+	err := r.dbContext.Get().WithContext(ctx).Select().From("consultants").All(&list)
 	return list, err
 }
 

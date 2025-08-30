@@ -9,12 +9,7 @@ import (
 // UseTransaction provides an interface for transactions with defer rollback, error handling
 // and transaction commit
 func (dbContext *DBContext) UseTransaction(ctx context.Context, consume func(tx *dbx.Tx) error) error {
-	_db, err := dbContext.Get()
-	if err != nil {
-		databaseLogger.Fatal(err)
-	}
-
-	tx, err := _db.WithContext(ctx).Begin()
+	tx, err := dbContext.Get().WithContext(ctx).Begin()
 	if err != nil {
 		return err
 	}

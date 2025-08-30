@@ -17,6 +17,12 @@ type ConsultantRole struct {
 	Role         string `json:"role"`
 }
 
+// ProjectConsultantLink ties a consultant to a specific project.
+type ProjectConsultantLink struct {
+	Consultant
+	ProjectID int `json:"projectID"`
+}
+
 // A consultant project struct
 type ProjectConsultant struct {
 	ID           int    `json:"ID"`

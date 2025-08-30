@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	InsertProjectStatusByStruct(ctx context.Context, s *entity.ProjectStatus) error
 	GetStatusHistoryByProjectID(ctx context.Context, projectID int) ([]entity.ProjectStatus, error)
+	GetStatusHistoryByProjectsIDS(ctx context.Context, projectIDS []int) ([]entity.ProjectStatus, error)
 }
 
 type repository struct {
@@ -36,10 +37,29 @@ func (r *repository) InsertProjectStatusByStruct(ctx context.Context, s *entity.
 	})
 }
 
+// GetStatusHistoryByProjectsIDS will return all project_statuses relating to the given projectIDs (history)
+func (r *repository) GetStatusHistoryByProjectsIDS(ctx context.Context, projectIDS []int) ([]entity.ProjectStatus, error) {
+	var list []entity.ProjectStatus
+
+	// Convert []int -> []interface{} for dbx.In
+	args := make([]interface{}, len(projectIDS))
+	for i, id := range projectIDS {
+		args[i] = id
+	}
+
+	err := r.dbContext.Get().WithContext(ctx).Select().
+		From("project_statuses").
+		Where(dbx.In("project_id", args...)).
+		OrderBy("id DESC").
+		All(&list)
+
+	return list, err
+}
+
 // GetStatusHistoryByProjectID will return all project_statuses relating to the projectID (history)
 func (r *repository) GetStatusHistoryByProjectID(ctx context.Context, projectID int) ([]entity.ProjectStatus, error) {
 	var list []entity.ProjectStatus
-	err := r.dbContext.DBX.WithContext(ctx).Select().
+	err := r.dbContext.Get().WithContext(ctx).Select().
 		From("project_statuses").
 		Where(&dbx.HashExp{"project_id": projectID}).
 		OrderBy("id DESC").

@@ -13,6 +13,7 @@ type Repository interface {
 	InsertTimeEntryByStruct(ctx context.Context, e *entity.TimeEntry) error
 	GetTimeEntryByTimeEntryID(ctx context.Context, id int) (*entity.TimeEntry, error)
 	GetTimeEntryHistoryByProjectID(ctx context.Context, projectID int) ([]entity.TimeEntry, error)
+	GetTimeEntryHistoryByProjectsIDS(ctx context.Context, projectIDS []int) ([]entity.TimeEntry, error)
 	GetTimeEntryHistoryByConsultantID(ctx context.Context, consultantID int) ([]entity.TimeEntry, error)
 	UpdateTimeEntryByStruct(ctx context.Context, e *entity.TimeEntry) error
 	DeleteTimeEntryByTimeEntryID(ctx context.Context, id int) error
@@ -37,6 +38,7 @@ func (r *repository) InsertTimeEntryByStruct(ctx context.Context, e *entity.Time
 			"consultant_id": e.ConsultantID,
 			"project_id":    e.ProjectID,
 			"type":          e.Type,
+			"entry_date":    e.EntryDate,
 		}).Execute()
 		return err
 	})
@@ -45,17 +47,34 @@ func (r *repository) InsertTimeEntryByStruct(ctx context.Context, e *entity.Time
 // GetTimeEntryByTimeEntryID will return a specific time entry by ID
 func (r *repository) GetTimeEntryByTimeEntryID(ctx context.Context, id int) (*entity.TimeEntry, error) {
 	var e entity.TimeEntry
-	err := r.dbContext.DBX.WithContext(ctx).Select().From("project_time_entries").Where(dbx.HashExp{"id": id}).One(&e)
+	err := r.dbContext.Get().WithContext(ctx).Select().From("project_time_entries").Where(dbx.HashExp{"id": id}).One(&e)
 	if err != nil {
 		return nil, err
 	}
 	return &e, nil
 }
 
+// GetTimeEntryHistoryByProjectsIDS will return all time entries for multiple projects
+func (r *repository) GetTimeEntryHistoryByProjectsIDS(ctx context.Context, projectIDS []int) ([]entity.TimeEntry, error) {
+	var list []entity.TimeEntry
+
+	args := make([]interface{}, len(projectIDS))
+	for i, id := range projectIDS {
+		args[i] = id
+	}
+
+	err := r.dbContext.Get().WithContext(ctx).Select().
+		From("project_time_entries").
+		Where(dbx.In("project_id", args...)).
+		OrderBy("id DESC").
+		All(&list)
+	return list, err
+}
+
 // GetTimeEntryHistoryByProjectID will return all time entries for project
 func (r *repository) GetTimeEntryHistoryByProjectID(ctx context.Context, projectID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.dbContext.DBX.WithContext(ctx).Select().
+	err := r.dbContext.Get().WithContext(ctx).Select().
 		From("project_time_entries").
 		Where(dbx.HashExp{"project_id": projectID}).
 		OrderBy("id DESC").
@@ -66,7 +85,7 @@ func (r *repository) GetTimeEntryHistoryByProjectID(ctx context.Context, project
 // GetTimeEntryHistoryByConsultantID will return all time entries by consultant
 func (r *repository) GetTimeEntryHistoryByConsultantID(ctx context.Context, consultantID int) ([]entity.TimeEntry, error) {
 	var list []entity.TimeEntry
-	err := r.dbContext.DBX.WithContext(ctx).Select().
+	err := r.dbContext.Get().WithContext(ctx).Select().
 		From("project_time_entries").
 		Where(dbx.HashExp{"consultant_id": consultantID}).
 		OrderBy("id DESC").

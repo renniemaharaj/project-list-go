@@ -13,7 +13,7 @@ type Service interface {
 	GetProjectsDataByIDS(ctx context.Context, ids []int) ([]Project, error)
 	GetAllProjectIDS(ctx context.Context) ([]int, error)
 	GetProjectIDSByPage(ctx context.Context, limit, offset int) ([]int, error)
-	GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string) ([]int, error)
+	GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string, limit, offset int) ([]int, error)
 	UpdateProjectByStruct(ctx context.Context, project *Project) error
 	DeleteProjectByID(ctx context.Context, projectID int) error
 }
@@ -65,8 +65,8 @@ func (s *service) GetProjectIDSByPage(ctx context.Context, limit, offset int) ([
 	return s.repo.GetProjectIDSByPage(ctx, limit, offset)
 }
 
-func (s *service) GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string) ([]int, error) {
-	return s.repo.GetProjectIDSBySearchQuery(ctx, searchQuery)
+func (s *service) GetProjectIDSBySearchQuery(ctx context.Context, searchQuery string, limit, offset int) ([]int, error) {
+	return s.repo.GetProjectIDSBySearchQuery(ctx, searchQuery, limit, offset)
 }
 
 func (s *service) UpdateProjectByStruct(ctx context.Context, project *Project) error {
