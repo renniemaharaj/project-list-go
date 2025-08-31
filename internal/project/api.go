@@ -10,7 +10,6 @@ import (
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
 	"github.com/renniemaharaj/project-list-go/internal/cache"
 	"github.com/renniemaharaj/project-list-go/internal/database"
-	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
 var (
@@ -58,7 +57,7 @@ func GetProjectsBySearchQuery(w http.ResponseWriter, r *http.Request) {
 	const pageSize = 20
 	offset := pageNumber * pageSize
 	projects, err := cache.Use(fmt.Sprintf("projects:search:%s:page:%d", searchQuery, pageNumber), func() ([]int, error) {
-		return NewRepository(database.Automatic, projectLogger).GetProjectIDSBySearchQuery(r.Context(), searchQuery, pageSize, offset)
+		return NewService(NewRepository(database.Automatic, projectLogger), projectLogger).GetProjectIDSBySearchQuery(r.Context(), searchQuery, pageSize, offset)
 	})
 
 	if err != nil {
@@ -82,7 +81,7 @@ func GetAllProjectIDSByPage(w http.ResponseWriter, r *http.Request) {
 	offset := pageNumber * pageSize
 
 	projects, err := cache.Use(fmt.Sprintf("projects:page:%d", pageNumber), func() ([]int, error) {
-		return NewRepository(database.Automatic, projectLogger).GetProjectIDSByPage(r.Context(), pageSize, offset)
+		return NewService(NewRepository(database.Automatic, projectLogger), projectLogger).GetProjectIDSByPage(r.Context(), pageSize, offset)
 	})
 
 	if err != nil {
@@ -111,8 +110,8 @@ func GetProjectsByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := cache.Use("projects:one:"+projectIDStr, func() (*entity.Project, error) {
-		return NewRepository(database.Automatic, projectLogger).GetProjectDataByID(r.Context(), projectID)
+	project, err := cache.Use("projects:one:"+projectIDStr, func() (*Project, error) {
+		return NewService(NewRepository(database.Automatic, projectLogger), projectLogger).GetProjectDataByID(r.Context(), projectID)
 	})
 
 	if err != nil {

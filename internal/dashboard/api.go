@@ -38,10 +38,10 @@ var (
 )
 
 // Internal cache projects function to reuse dashboard-fetched projects
-func proactivelyCacheProjectData(projects []entity.Project) {
+func proactivelyCacheProjectData(projects []internalProject.Project) {
 	for _, p := range projects {
 		// Cache each project under its own key
-		_, _ = cache.Use(fmt.Sprintf("projects:one:%d", p.ID), func() (entity.Project, error) {
+		_, _ = cache.Use(fmt.Sprintf("projects:one:%d", p.ID), func() (internalProject.Project, error) {
 			// Return the already-fetched value; no DB call here.
 			return p, nil
 		})
@@ -52,6 +52,10 @@ func Dashboard(r chi.Router) {
 	r.Get("/", GetMetricsDashboard)
 }
 
+type MetricsDashboard struct {
+	entity.MetricsDashboard
+}
+
 func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 	// Guard: ensures that waiting clients must hit cache instead of unnecessarily computing
 	dashboardBuildLock.Lock()
@@ -59,23 +63,23 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	// We wrap dashboard compute in a use cache interface which auto caches return values
-	dashboardMetrics, err := cache.Use("metrics_dashboard", func() (entity.MetricsDashboard, error) {
+	dashboardMetrics, err := cache.Use("metrics_dashboard", func() (MetricsDashboard, error) {
 
 		// 1) Fetch project IDs (cheap)
 		// repository does not offer get all projects in complete (more performant to return ids)
-		projectIDS, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetAllProjectIDS(ctx)
+		projectIDS, err := internalProject.NewService(internalProject.NewRepository(database.Automatic, dashboardLogger), dashboardLogger).GetAllProjectIDS(ctx)
 		if err != nil {
-			return entity.MetricsDashboard{}, err
+			return MetricsDashboard{}, err
 		}
 		if len(projectIDS) == 0 {
-			return entity.MetricsDashboard{}, nil
+			return MetricsDashboard{}, nil
 		}
 
-		projectMetas, projects, err := internalMeta.NewRepository(database.Automatic, dashboardLogger).GetProjectsMetaByProjectIDS(ctx, projectIDS, true)
+		projectMetas, projects, err := internalMeta.NewService(internalMeta.NewRepository(database.Automatic, dashboardLogger), dashboardLogger).GetProjectsMetaByProjectIDS(ctx, projectIDS, true)
 		// 2) Fetch project rows in bulk (cheap relative to per-project meta)
 		// projects, err := internalProject.NewRepository(database.Automatic, dashboardLogger).GetProjectsDataByIDS(ctx, projectIDS)
 		if err != nil {
-			return entity.MetricsDashboard{}, err
+			return MetricsDashboard{}, err
 		}
 		// 2a) Proactively cache each project record (async fire-and-forget)
 		go proactivelyCacheProjectData(projects)
@@ -83,9 +87,8 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 		const idleThreshold = 7 * 24 * time.Hour
 		now := time.Now()
 		// 3) Pre-compute ending soon from projects (no need to involve workers)
-		result := entity.MetricsDashboard{
-			Projects: len(projects),
-		}
+		result := MetricsDashboard{}
+		result.Projects = len(projects)
 		for _, p := range projects {
 			if p.EndDate.After(now) && p.EndDate.Before(now.Add(idleThreshold)) {
 				result.EndingSoon++
@@ -102,12 +105,12 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 		worker := func(ctx context.Context) {
 			for id := range jobs {
 				// Use cache.Use around meta fetch
-				meta, metaError := cache.Use(fmt.Sprintf("projects:meta:%d", id), func() (entity.ProjectMeta, error) {
+				meta, metaError := cache.Use(fmt.Sprintf("projects:meta:%d", id), func() (internalMeta.ProjectMeta, error) {
 					if pm, ok := projectMetas[id]; ok {
 						return pm, nil
 					}
 
-					pm, err := internalMeta.NewRepository(database.Automatic, dashboardLogger).GetProjectMetaByProjectID(ctx, id)
+					pm, err := internalMeta.NewService(internalMeta.NewRepository(database.Automatic, dashboardLogger), dashboardLogger).GetProjectMetaByProjectID(ctx, id)
 					return *pm, err
 				})
 				if metaError != nil {
@@ -186,7 +189,7 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 			select {
 			case err := <-errs:
 				// Drain workers by cancel if you wrap ctx with context.WithCancel here.
-				return entity.MetricsDashboard{}, err
+				return MetricsDashboard{}, err
 			case p := <-results:
 				received++
 				result.Completed += p.Completed
@@ -201,7 +204,7 @@ func GetMetricsDashboard(w http.ResponseWriter, r *http.Request) {
 					ratioCount++
 				}
 			case <-ctx.Done():
-				return entity.MetricsDashboard{}, ctx.Err()
+				return MetricsDashboard{}, ctx.Err()
 			}
 		}
 

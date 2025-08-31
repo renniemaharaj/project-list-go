@@ -25,9 +25,11 @@ func main() {
 	// main logger used by main function
 	mainLogger := logger.New().Prefix("Backend")
 
+	mainLogger.Info("Allowing time for postgres to initialize...")
 	// allow time for postgres to initialize
 	time.Sleep(5 * time.Second)
 
+	mainLogger.Info("Resolving automatic database profile")
 	// initialize automatic database profile
 	_, err := database.Automatic.Resolve()
 	if err != nil {
@@ -35,6 +37,7 @@ func main() {
 
 	}
 
+	mainLogger.Info("")
 	// will automatically initialize tables
 	if err := schema.NewRepository(database.Automatic, mainLogger).InitializeDatabaseTables(context.Background()); err != nil {
 		panic(err)
@@ -48,7 +51,7 @@ func main() {
 	demoData := true
 	// seed demo data
 	if demoData {
-		err = demo.NewRepository(database.Automatic, mainLogger).InsertSeededDemoData(context.Background())
+		err = demo.NewRepository(database.Automatic, mainLogger).GenerateInsertDemoData(context.Background())
 		if err != nil {
 			logger.New().Fatal(err)
 		}
@@ -69,15 +72,19 @@ func main() {
 
 	// private routes
 	r.Group(func(r chi.Router) {
-		r.Route("/project", project.ProjectHandler)
 		r.Route("/meta", meta.Meta)
+		r.Route("/project", project.ProjectHandler)
 		r.Route("/dashboard", dashboard.Dashboard)
 	})
 
 	// start rest server
 	go func() {
 		mainLogger.Info("Starting server on :8081")
-		if err := http.ListenAndServe(":8081", r); err != nil {
+		server := &http.Server{
+			Addr:    ":8081",
+			Handler: r, // chi router as handler
+		}
+		if err := server.ListenAndServe(); err != nil {
 			mainLogger.Fatal(err)
 		}
 	}()

@@ -9,7 +9,6 @@ import (
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
 	"github.com/renniemaharaj/project-list-go/internal/cache"
 	"github.com/renniemaharaj/project-list-go/internal/database"
-	"github.com/renniemaharaj/project-list-go/internal/entity"
 )
 
 var (
@@ -36,13 +35,13 @@ func GetProjectMetaByProjectID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projectMeta, err := cache.Use("projects:meta:"+projectIDStr, func() (entity.ProjectMeta, error) {
-		md, err := NewRepository(database.Automatic, metaLogger).GetProjectMetaByProjectID(r.Context(), projectID)
+	projectMeta, err := cache.Use("projects:meta:"+projectIDStr, func() (*ProjectMeta, error) {
+		md, err := NewService(NewRepository(database.Automatic, metaLogger), metaLogger).GetProjectMetaByProjectID(r.Context(), projectID)
 		if err != nil {
 			metaLogger.Fatal(err)
-			return entity.ProjectMeta{}, err
+			return &ProjectMeta{}, err
 		}
-		return *md, err
+		return md, err
 	})
 
 	if err != nil {

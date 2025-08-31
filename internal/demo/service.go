@@ -7,7 +7,7 @@ import (
 )
 
 type Service interface {
-	InsertSeededDemoData(ctx context.Context) error
+	GenerateInsertDemoData(ctx context.Context) error
 }
 
 // Service
@@ -20,6 +20,6 @@ func NewService(repo Repository, logger *logger.Logger) Service {
 	return &service{repo, logger}
 }
 
-func (s *service) InsertSeededDemoData(ctx context.Context) error {
-	return s.repo.InsertSeededDemoData(ctx)
+func (s *service) GenerateInsertDemoData(ctx context.Context) error {
+	return s.repo.GenerateInsertDemoData(ctx)
 }
