@@ -97,9 +97,6 @@ func (dbContext *DBContext) GetManual() (*dbx.DB, error) {
 
 		dbContext.dbx = db
 		dbContext.err = nil
-
-		dbContext.dbx.QueryLogFunc = logDBQuery(databaseLogger)
-		dbContext.dbx.ExecLogFunc = logDBExec(databaseLogger)
 	}
 
 	return dbContext.dbx, dbContext.err

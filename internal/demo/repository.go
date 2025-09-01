@@ -11,7 +11,6 @@ import (
 
 	dbx "github.com/go-ozzo/ozzo-dbx"
 	"github.com/renniemaharaj/grouplogs/pkg/logger"
-	"github.com/renniemaharaj/project-list-go/internal/consultant"
 	internalConsultant "github.com/renniemaharaj/project-list-go/internal/consultant"
 	"github.com/renniemaharaj/project-list-go/internal/database"
 	"github.com/renniemaharaj/project-list-go/internal/entity"
@@ -123,7 +122,7 @@ func (r *repository) insertConsultants(ctx context.Context, consultants []entity
 		c := &consultants[ci]
 		c.ProfilePicture = fmt.Sprintf("https://api.dicebear.com/7.x/lorelei/svg?seed=%s", url.QueryEscape(c.Email))
 
-		if err := consultant.NewRepository(r.dbContext, r.l).InsertConsultantByStruct(ctx, c); err != nil {
+		if err := internalConsultant.NewRepository(r.dbContext, r.l).InsertConsultantByStruct(ctx, c); err != nil {
 			return err
 		}
 		if err := r.dbContext.Get().NewQuery("SELECT id FROM consultants WHERE email = {:email}").

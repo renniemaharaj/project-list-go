@@ -31,7 +31,7 @@ func main() {
 
 	mainLogger.Info("Resolving automatic database profile")
 	// initialize automatic database profile
-	_, err := database.Automatic.Resolve()
+	db, err := database.Automatic.Resolve()
 	if err != nil {
 		panic(err)
 
@@ -56,6 +56,8 @@ func main() {
 			logger.NewLogger().Fatal(err)
 		}
 	}
+	db.QueryLogFunc = database.QueryDBLogFunc()
+	db.ExecLogFunc = database.ExecDBLogFunc()
 
 	// setup chi router and start server
 	r := chi.NewRouter()
