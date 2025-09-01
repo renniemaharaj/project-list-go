@@ -37,7 +37,7 @@ func NewRepository(dbContext *database.DBContext, _l *logger.Logger) Repository 
 
 var (
 	// use to get a random number, ((0 - max) + 1) of projects per consultant
-	maxProjectPerConsultant = 100
+	maxProjectPerConsultant = 5
 )
 
 // GenerateInsertDemoData inserts multiple demo consultants, projects, statuses, time entries,
