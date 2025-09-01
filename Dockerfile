@@ -25,6 +25,9 @@ COPY --from=builder /go/src/app/main .
 # Copy .env
 COPY .env .
 
+# Copy cfx.json
+COPY ./internal/demo/cfx_c.json .
+
 # Expose service port
 EXPOSE 8081
 

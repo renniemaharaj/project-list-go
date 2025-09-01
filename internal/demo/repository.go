@@ -38,7 +38,7 @@ func NewRepository(dbContext *database.DBContext, _l *logger.Logger) Repository 
 
 var (
 	// use to get a random number, ((0 - max) + 1) of projects per consultant
-	maxProjectPerConsultant = 300
+	maxProjectPerConsultant = 100
 )
 
 // GenerateInsertDemoData inserts multiple demo consultants, projects, statuses, time entries,
@@ -58,10 +58,10 @@ func (r *repository) GenerateInsertDemoData(ctx context.Context) error {
 	// --- Demo consultants ---
 	consultants := []entity.Consultant{}
 
-	contents, err := os.ReadFile("internal/demo/cfx.json")
+	contents, err := os.ReadFile("cfx_c.json")
 	if err != nil {
 		r.l.Fatal(err)
-		panic("cfx.json containing consultants not found")
+		panic("cfx_c.json containing consultants not found")
 	}
 
 	err = json.Unmarshal(contents, &consultants)
