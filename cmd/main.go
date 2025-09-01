@@ -36,8 +36,8 @@ func main() {
 		panic(err)
 
 	}
+	mainLogger.SuccessF("Connected to database using %s", database.Automatic.EnvVar())
 
-	mainLogger.Info("")
 	// will automatically initialize tables
 	if err := schema.NewRepository(database.Automatic, mainLogger).InitializeDatabaseTables(context.Background()); err != nil {
 		panic(err)
@@ -51,14 +51,14 @@ func main() {
 	demoData := true
 	// seed demo data
 	if demoData {
-		err = demo.NewRepository(database.Automatic, mainLogger).GenerateInsertDemoData(context.Background())
+		err = demo.NewService(demo.NewRepository(database.Automatic, mainLogger), mainLogger).GenerateInsertDemoData(context.Background())
 		if err != nil {
-			logger.New().Fatal(err)
+			logger.NewLogger().Fatal(err)
 		}
 	}
+
 	// setup chi router and start server
 	r := chi.NewRouter()
-
 	// use middlewares
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
@@ -69,9 +69,9 @@ func main() {
 		// public
 		r.Get("/public", routes.HealthCheck)
 	})
-
 	// private routes
 	r.Group(func(r chi.Router) {
+		// authenticate here
 		r.Route("/meta", meta.Meta)
 		r.Route("/project", project.ProjectHandler)
 		r.Route("/dashboard", dashboard.Dashboard)

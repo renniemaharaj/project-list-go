@@ -2,7 +2,7 @@ module github.com/renniemaharaj/project-list-go
 
 go 1.24.5
 
-require github.com/renniemaharaj/grouplogs v1.6.1
+require github.com/renniemaharaj/grouplogs v1.6.2
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

@@ -19,10 +19,10 @@ type DBContext struct {
 }
 
 var (
-	databaseLogger = logger.New().Prefix("Database Logger")
+	databaseLogger = logger.NewLogger().Prefix("Database Logger")
 
-	// Automatic will automatically pick the best DB available
-	Automatic = newInstance("ADAPTIVE")
+	// Automatically resolves to the best available DB trying Production -> Docker -> Developer
+	Automatic = newInstance("AUTOMATIC")
 
 	// Explicit DB instances in order of priority
 	Production = newInstance("PROD_POSTGRES_DSN")
@@ -41,9 +41,14 @@ func (dbContext *DBContext) Get() *dbx.DB {
 	return dbContext.dbx
 }
 
+// EnvVar returns the environment variable name used by this db context
+func (dbContext *DBContext) EnvVar() string {
+	return dbContext.envVar
+}
+
 // Resolve automatically chooses database by trying Production -> Docker -> Developer
 func (dbContext *DBContext) Resolve() (*dbx.DB, error) {
-	if dbContext.envVar == "ADAPTIVE" {
+	if dbContext.envVar == "AUTOMATIC" {
 		// Try in order, but assign result back into Automatic (self)
 		candidates := []*DBContext{Production, Docker, Developer}
 
@@ -92,6 +97,9 @@ func (dbContext *DBContext) GetManual() (*dbx.DB, error) {
 
 		dbContext.dbx = db
 		dbContext.err = nil
+
+		dbContext.dbx.QueryLogFunc = logDBQuery(databaseLogger)
+		dbContext.dbx.ExecLogFunc = logDBExec(databaseLogger)
 	}
 
 	return dbContext.dbx, dbContext.err
